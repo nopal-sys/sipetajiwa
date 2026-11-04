@@ -1,0 +1,66 @@
+{
+  "users": [
+    {
+      "username": "admin",
+      "pass": "d62990a68dbcbfe9:7c84e2aab003db0a2b3b8c73c5be3f4dd692fb792a14f3e60aeda428e16254e1",
+      "role": "admin"
+    },
+    {
+      "username": "nopal",
+      "pass": "5f4229366b09c905:ec1a66df0f2c08844ac5905cbbc7d2a065fbb2be725f695a4a05863f55c14478",
+      "role": "abang",
+      "cartId": "2f4a9703e40c"
+    },
+    {
+      "username": "yono",
+      "pass": "e8febf6b922fc77a:54820a08d1385171165d37e09fb5dc0713a5c529d101e101f3ace02844f28f99",
+      "role": "abang",
+      "cartId": "b07c8fcecfe6"
+    },
+    {
+      "username": "paw",
+      "pass": "90d8eade323276c3:a8e68af5b1ec901f005105b650c89854ad6a24b5c1bfe194ffbf71e0ee1c4492",
+      "role": "abang",
+      "cartId": "f48a45ac7dcd"
+    }
+  ],
+  "carts": [
+    {
+      "id": "2f4a9703e40c",
+      "name": "1",
+      "abang": "nopal",
+      "lat": -6.25774172351961,
+      "lng": 107.0064465324741,
+      "online": true,
+      "updated": 1793767926686,
+      "menu": [
+        {
+          "id": "0962a2489ffd",
+          "name": "kopi",
+          "price": 10,
+          "available": true
+        }
+      ]
+    },
+    {
+      "id": "b07c8fcecfe6",
+      "name": "2",
+      "abang": "yono",
+      "lat": -6.173809,
+      "lng": 106.9920005,
+      "online": false,
+      "updated": 1793332701138,
+      "menu": []
+    },
+    {
+      "id": "f48a45ac7dcd",
+      "name": "3",
+      "abang": "paw",
+      "lat": -6.257744687589566,
+      "lng": 107.006460000673,
+      "online": true,
+      "updated": 1793768014210,
+      "menu": []
+    }
+  ]
+}

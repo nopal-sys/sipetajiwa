@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gerobak Sejuta Jiwa</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<style>
+  html, body { height: 100%; margin: 0; font: 15px system-ui, sans-serif; color: #1c2a22; }
+  #map { position: absolute; inset: 0; }              /* peta full layar */
+  #bar { position: absolute; top: 10px; left: 10px; right: 10px; z-index: 1000;
+         display: flex; justify-content: space-between; gap: 8px; pointer-events: none; }
+  #bar > * { pointer-events: auto; }
+  .chip { background: #fff; border: 0; border-radius: 999px; padding: 9px 15px;
+          box-shadow: 0 2px 8px #0003; font: inherit; cursor: pointer; }
+  .chip.main { background: #0f7a4d; color: #fff; }
+  #panel { position: absolute; z-index: 1000; background: #fff; padding: 14px; overflow: auto;
+           left: 0; right: 0; bottom: 0; max-height: 55%; border-radius: 16px 16px 0 0;
+           box-shadow: 0 -2px 12px #0004; }
+  #panel:empty { display: none; }
+  @media (min-width: 760px) {
+    #panel { left: auto; right: 10px; top: 60px; bottom: auto; width: 340px;
+             max-height: calc(100% - 80px); border-radius: 14px; box-shadow: 0 2px 12px #0004; }
+  }
+  .pin { font-size: 28px; text-align: center; line-height: 30px; }
+  h3 { margin: 0 0 4px; font-size: 17px; }
+  .mut { color: #66746c; font-size: 13px; }
+  .row { display: flex; justify-content: space-between; align-items: center; gap: 8px;
+         padding: 7px 0; border-top: 1px solid #e3e8e4; }
+  .tag { font-size: 12px; padding: 2px 8px; border-radius: 999px; background: #e0f2e9; color: #0f7a4d; }
+  .tag.off { background: #fbe4e1; color: #b8392b; }
+  .box { border-bottom: 1px solid #d5ddd7; padding-bottom: 12px; margin-bottom: 12px; }
+  button.s { border: 1px solid #cdd6d0; background: #fff; border-radius: 8px; padding: 5px 10px; cursor: pointer; font: inherit; font-size: 13px; }
+  button.s.p { background: #0f7a4d; color: #fff; border-color: #0f7a4d; }
+  button.s.d { color: #b8392b; }
+  input { font: inherit; padding: 7px 9px; border: 1px solid #cdd6d0; border-radius: 8px; width: 100%; box-sizing: border-box; margin: 3px 0; }
+  dialog { border: 0; border-radius: 14px; padding: 18px; width: min(320px, 90vw); }
+</style>
+</head>
+<body>
+<div id="map"></div>
+<div id="bar">
+  <button class="chip" id="near">📍 Dekat saya</button>
+  <button class="chip main" id="auth">Masuk</button>
+</div>
+<div id="panel"></div>
+
+<dialog id="dlg">
+  <form id="loginForm">
+    <h3>Masuk</h3>
+    <p class="mut">Untuk abang gerobak dan admin. Customer tidak perlu masuk.</p>
+    <input id="lu" placeholder="Username" autocomplete="username" required>
+    <input id="lp" type="password" placeholder="Password" autocomplete="current-password" required>
+    <p id="lerr" class="mut" style="color:#b8392b"></p> 
+    <button class="s p" type="submit">Masuk</button>
+    <button class="s" type="button" onclick="dlg.close()">Batal</button>
+  </form>
+</dialog>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const rp = n => 'Rp' + Number(n).toLocaleString('id-ID');
+
+let token = localStorage.getItem('token'), me = null, carts = [], selId = null;
+const markers = {};
+
+// ---------- Peta ----------
+const map = L.map('map').setView([-6.2088, 106.8456], 13);
+L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  maxZoom: 19, attribution: '&copy; OpenStreetMap'
+}).addTo(map);
+const ICON = L.icon({ iconUrl: 'gerobak.png', iconSize: [64, 43], iconAnchor: [32, 40] });
+
+// ---------- API helper ----------
+async function api(method, url, body) {
+  const r = await fetch(url, {
+    method,
+    headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: 'Bearer ' + token } : {}) },
+    body: body ? JSON.stringify(body) : undefined
+  });
+  const data = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(data.error || 'Terjadi kesalahan');
+  return data;
+}
+const act = (p) => p.then(refresh).catch(e => alert(e.message));
+
+// ---------- Ambil data gerobak (polling tiap 5 detik) ----------
+async function refresh() {
+  try { carts = await api('GET', '/api/carts'); } catch (e) { return; }
+  const seen = new Set();
+  carts.forEach(c => {
+    seen.add(c.id);
+    let m = markers[c.id];
+    if (!m) {
+      m = markers[c.id] = L.marker([c.lat, c.lng], { icon: ICON }).addTo(map)
+        .on('click', () => { selId = c.id; render(true); });
+    } else m.setLatLng([c.lat, c.lng]);
+    m.setOpacity(c.online ? 1 : 0.4);
+  });
+  Object.keys(markers).forEach(id => {
+    if (!seen.has(id)) { map.removeLayer(markers[id]); delete markers[id]; }
+  });
+  render(false);
+}
+setInterval(refresh, 5000);
+
+// ---------- Tampilan panel ----------
+const canManage = c => me && (me.role === 'admin' || me.cartId === c.id);
+
+function render(force) {
+  const p = $('panel');
+  // jangan hapus ketikan user saat auto-refresh
+  if (!force && p.contains(document.activeElement) && document.activeElement.tagName === 'INPUT') return;
+  let h = '';
+  if (me && me.role === 'abang') h += abangBox();
+  if (me && me.role === 'admin') h += adminBox();
+  const c = carts.find(x => x.id === selId);
+  if (c) h += detail(c);
+  p.innerHTML = h;
+  $('auth').textContent = me ? 'Keluar (' + me.username + ')' : 'Masuk';
+}
+
+function detail(c) {
+  const mg = canManage(c);
+  const items = mg ? c.menu : c.menu.filter(m => m.available);
+  const habis = mg ? [] : c.menu.filter(m => !m.available);
+  let h = `<h3>${esc(c.name)} <span class="tag ${c.online ? '' : 'off'}">${c.online ? 'Buka' : 'Tutup'}</span></h3>
+    <div class="mut">Abang: ${esc(c.abang)} · update ${new Date(c.updated).toLocaleTimeString('id-ID')}</div>
+    <div style="margin-top:8px"><b>${mg ? 'Kelola menu' : 'Menu tersedia'}</b></div>`;
+  if (!items.length) h += `<p class="mut">${mg ? 'Belum ada menu. Tambahkan di bawah.' : 'Belum ada menu yang tersedia.'}</p>`;
+  items.forEach(m => {
+    h += `<div class="row"><span>${esc(m.name)}<br><span class="mut">${rp(m.price)}</span></span>`;
+    h += mg
+      ? `<span><button class="s ${m.available ? '' : 'd'}" onclick="toggleItem('${c.id}','${m.id}',${!m.available})">${m.available ? 'Tersedia' : 'Habis'}</button>
+         <button class="s d" onclick="delItem('${c.id}','${m.id}')">×</button></span>`
+      : `<b>${rp(m.price)}</b>`;
+    h += '</div>';
+  });
+  if (habis.length) h += `<p class="mut">Habis: ${habis.map(m => esc(m.name)).join(', ')}</p>`;
+  if (mg) h += `<div style="margin-top:8px"><input id="mn" placeholder="Nama menu"><input id="mp" type="number" placeholder="Harga">
+      <button class="s p" onclick="addItem('${c.id}')">Tambah menu</button></div>`;
+  if (me && me.role === 'admin') h += `<p><button class="s d" onclick="delCart('${c.id}')">Hapus gerobak</button></p>`;
+  return h;
+}
+
+function abangBox() {
+  const c = carts.find(x => x.id === me.cartId);
+  if (!c) return '';
+  return `<div class="box"><h3>Panel abang</h3>
+    <button class="s ${c.online ? '' : 'p'}" onclick="toggleOnline('${c.id}',${!c.online})">${c.online ? 'Tutup gerobak' : 'Buka gerobak'}</button>
+    <button class="s ${watchId === null ? 'p' : ''}" onclick="toggleGps()">${watchId === null ? 'Bagikan lokasi GPS' : 'Stop bagikan lokasi'}</button>
+    <button class="s" onclick="selId='${c.id}';render(true)">Lihat gerobak saya</button></div>`;
+}
+function adminBox() {
+  return `<div class="box"><h3>Panel admin</h3>
+    <input id="cn" placeholder="Nama gerobak"><input id="cu" placeholder="Username abang"><input id="cp" type="password" placeholder="Password abang">
+    <button class="s p" onclick="addCart()">Tambah gerobak</button></div>`;
+}
+
+// ---------- Aksi ----------
+const toggleItem = (cid, iid, v) => act(api('PATCH', `/api/carts/${cid}/menu/${iid}`, { available: v }));
+const delItem = (cid, iid) => act(api('DELETE', `/api/carts/${cid}/menu/${iid}`));
+const toggleOnline = (cid, v) => act(api('PUT', `/api/carts/${cid}/online`, { online: v }));
+const delCart = id => confirm('Hapus gerobak ini?') && act(api('DELETE', '/api/carts/' + id).then(() => { selId = null; }));
+function addItem(cid) {
+  const name = $('mn').value.trim(); if (!name) return;
+  act(api('POST', `/api/carts/${cid}/menu`, { name, price: $('mp').value }).then(() => render(true)));
+}
+function addCart() {
+  act(api('POST', '/api/carts', { name: $('cn').value.trim(), username: $('cu').value.trim(), password: $('cp').value })
+    .then(c => { selId = c.id; }));
+}
+
+// GPS abang: kirim posisi ke server tiap ada update (max 1x / 4 detik)
+let watchId = null, lastSend = 0;
+function toggleGps() {
+  if (watchId !== null) { navigator.geolocation.clearWatch(watchId); watchId = null; return render(true); }
+  if (!navigator.geolocation) return alert('Browser tidak mendukung GPS');
+  watchId = navigator.geolocation.watchPosition(pos => {
+    if (Date.now() - lastSend < 4000) return;
+    lastSend = Date.now();
+    api('PUT', `/api/carts/${me.cartId}/location`, { lat: pos.coords.latitude, lng: pos.coords.longitude }).then(refresh).catch(() => {});
+  }, err => { alert('GPS gagal: ' + err.message); watchId = null; render(true); }, { enableHighAccuracy: true });
+  render(true);
+}
+
+// Customer: cari lokasi sendiri (izin baru diminta saat tombol ditekan)
+let meMarker = null;
+$('near').onclick = () => {
+  if (!navigator.geolocation) return alert('Browser tidak mendukung GPS');
+  navigator.geolocation.getCurrentPosition(pos => {
+    const ll = [pos.coords.latitude, pos.coords.longitude];
+    if (meMarker) map.removeLayer(meMarker);
+    meMarker = L.circleMarker(ll, { radius: 8, color: '#1a73e8', fillOpacity: .9 }).addTo(map);
+    map.setView(ll, 16);
+  }, () => alert('Lokasi tidak bisa diakses. Cek izin lokasi di browser.'));
+};
+
+// ---------- Login / logout ----------
+const dlg = $('dlg');
+$('auth').onclick = () => {
+  if (me) { if (watchId !== null) toggleGps(); token = null; me = null; localStorage.removeItem('token'); selId = null; return render(true); }
+  $('lerr').textContent = ''; dlg.showModal();
+};
+$('loginForm').onsubmit = async e => {
+  e.preventDefault();
+  try {
+    const r = await api('POST', '/api/login', { username: $('lu').value, password: $('lp').value });
+    token = r.token; localStorage.setItem('token', token);
+    me = { username: r.username, role: r.role, cartId: r.cartId };
+    dlg.close(); $('lp').value = '';
+    if (me.cartId) selId = me.cartId;
+    render(true);
+  } catch (err) { $('lerr').textContent = err.message; }
+};
+
+// ---------- Mulai ----------
+(async () => {
+  if (token) { try { me = await api('GET', '/api/me'); } catch (e) { token = null; localStorage.removeItem('token'); } }
+  await refresh();
+  render(true);
+})();
+</script>
+</body>
+</html>
