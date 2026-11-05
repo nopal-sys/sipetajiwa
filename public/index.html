@@ -20,7 +20,7 @@
   #panel:empty { display: none; }
   @media (min-width: 760px) {
     #panel { left: auto; right: 10px; top: 60px; bottom: auto; width: 340px;
-             max-height: calc(100% - 80px); border-radius: 14px; box-shadow: 0 2px 12px #0004; }
+              max-height: calc(100% - 80px); border-radius: 14px; box-shadow: 0 2px 12px #0004; }
   }
   .pin { font-size: 28px; text-align: center; line-height: 30px; }
   h3 { margin: 0 0 4px; font-size: 17px; }
@@ -89,8 +89,19 @@ const act = (p) => p.then(refresh).catch(e => alert(e.message));
 // ---------- Ambil data gerobak (polling tiap 5 detik) ----------
 async function refresh() {
   try { carts = await api('GET', '/api/carts'); } catch (e) { return; }
+  
+  // Menentukan gerobak mana saja yang boleh tampil di peta berdasarkan hak akses
+  let displayCarts = carts;
+  if (!me) {
+    // Customer (belum login) hanya melihat gerobak yang online
+    displayCarts = carts.filter(c => c.online);
+  } else if (me.role === 'abang') {
+    // Abang melihat semua yang online ditambah gerobaknya sendiri meski sedang offline
+    displayCarts = carts.filter(c => c.online || c.id === me.cartId);
+  }
+
   const seen = new Set();
-  carts.forEach(c => {
+  displayCarts.forEach(c => {
     seen.add(c.id);
     let m = markers[c.id];
     if (!m) {
@@ -115,7 +126,6 @@ function render(force) {
   if (!force && p.contains(document.activeElement) && document.activeElement.tagName === 'INPUT') return;
   let h = '';
   if (me && me.role === 'abang') h += abangBox();
-  if (me && me.role === 'admin') h += adminBox();
   const c = carts.find(x => x.id === selId);
   if (c) h += detail(c);
   p.innerHTML = h;
@@ -141,7 +151,6 @@ function detail(c) {
   if (habis.length) h += `<p class="mut">Habis: ${habis.map(m => esc(m.name)).join(', ')}</p>`;
   if (mg) h += `<div style="margin-top:8px"><input id="mn" placeholder="Nama menu"><input id="mp" type="number" placeholder="Harga">
       <button class="s p" onclick="addItem('${c.id}')">Tambah menu</button></div>`;
-  if (me && me.role === 'admin') h += `<p><button class="s d" onclick="delCart('${c.id}')">Hapus gerobak</button></p>`;
   return h;
 }
 
@@ -153,24 +162,14 @@ function abangBox() {
     <button class="s ${watchId === null ? 'p' : ''}" onclick="toggleGps()">${watchId === null ? 'Bagikan lokasi GPS' : 'Stop bagikan lokasi'}</button>
     <button class="s" onclick="selId='${c.id}';render(true)">Lihat gerobak saya</button></div>`;
 }
-function adminBox() {
-  return `<div class="box"><h3>Panel admin</h3>
-    <input id="cn" placeholder="Nama gerobak"><input id="cu" placeholder="Username abang"><input id="cp" type="password" placeholder="Password abang">
-    <button class="s p" onclick="addCart()">Tambah gerobak</button></div>`;
-}
 
 // ---------- Aksi ----------
 const toggleItem = (cid, iid, v) => act(api('PATCH', `/api/carts/${cid}/menu/${iid}`, { available: v }));
 const delItem = (cid, iid) => act(api('DELETE', `/api/carts/${cid}/menu/${iid}`));
 const toggleOnline = (cid, v) => act(api('PUT', `/api/carts/${cid}/online`, { online: v }));
-const delCart = id => confirm('Hapus gerobak ini?') && act(api('DELETE', '/api/carts/' + id).then(() => { selId = null; }));
 function addItem(cid) {
   const name = $('mn').value.trim(); if (!name) return;
   act(api('POST', `/api/carts/${cid}/menu`, { name, price: $('mp').value }).then(() => render(true)));
-}
-function addCart() {
-  act(api('POST', '/api/carts', { name: $('cn').value.trim(), username: $('cu').value.trim(), password: $('cp').value })
-    .then(c => { selId = c.id; }));
 }
 
 // GPS abang: kirim posisi ke server tiap ada update (max 1x / 4 detik)
@@ -211,6 +210,13 @@ $('loginForm').onsubmit = async e => {
     token = r.token; localStorage.setItem('token', token);
     me = { username: r.username, role: r.role, cartId: r.cartId };
     dlg.close(); $('lp').value = '';
+
+    // Jika yang login admin, arahkan ke halaman khusus admin
+    if (me.role === 'admin') {
+      window.location.href = '/admin.html';
+      return;
+    }
+
     if (me.cartId) selId = me.cartId;
     render(true);
   } catch (err) { $('lerr').textContent = err.message; }
@@ -218,7 +224,19 @@ $('loginForm').onsubmit = async e => {
 
 // ---------- Mulai ----------
 (async () => {
-  if (token) { try { me = await api('GET', '/api/me'); } catch (e) { token = null; localStorage.removeItem('token'); } }
+  if (token) { 
+    try { 
+      me = await api('GET', '/api/me'); 
+      // Jika token tersimpan adalah admin, langsung arahkan ke admin.html
+      if (me && me.role === 'admin') {
+        window.location.href = '/admin.html';
+        return;
+      }
+    } catch (e) { 
+      token = null; 
+      localStorage.removeItem('token'); 
+    } 
+  }
   await refresh();
   render(true);
 })();

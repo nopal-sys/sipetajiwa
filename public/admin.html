@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Dashboard Admin - Gerobak Sejuta Jiwa</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: system-ui, -apple-system, sans-serif; background: #f4f6f8; color: #1c2a22; display: flex; height: 100vh; overflow: hidden; }
+
+    /* Sidebar Navigation */
+    #sidebar { width: 250px; background: #111827; color: #fff; display: flex; flex-direction: column; justify-content: space-between; padding: 20px 0; }
+    .logo { font-size: 18px; font-weight: bold; padding: 0 20px 20px; border-bottom: 1px solid #1f2937; color: #10b981; }
+    .nav-list { list-style: none; padding: 10px 0; margin: 0; }
+    .nav-item a { display: block; padding: 12px 20px; color: #9ca3af; text-decoration: none; font-size: 14px; font-weight: 500; }
+    .nav-item.active a, .nav-item a:hover { background: #1f2937; color: #10b981; }
+    .user-info { padding: 15px 20px; border-top: 1px solid #1f2937; font-size: 13px; color: #9ca3af; display: flex; justify-content: space-between; align-items: center; }
+    
+    /* Main Content Area */
+    #main-content { flex: 1; overflow-y: auto; padding: 24px; display: flex; flex-direction: column; gap: 20px; }
+    .header { display: flex; justify-content: space-between; align-items: center; }
+    h2 { margin: 0; font-size: 22px; }
+
+    /* Stat Cards */
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; }
+    .card { background: #fff; padding: 18px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+    .card .title { font-size: 13px; color: #6b7280; font-weight: 500; }
+    .card .value { font-size: 26px; font-weight: bold; margin-top: 6px; color: #0f7a4d; }
+
+    /* Layout Dashboard (Map + Form) */
+    .dashboard-body { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; }
+    @media (max-width: 900px) { .dashboard-body { grid-template-columns: 1fr; } }
+
+    /* Map Box */
+    .map-container { background: #fff; border-radius: 12px; padding: 14px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); height: 420px; display: flex; flex-direction: column; }
+    #adminMap { flex: 1; border-radius: 8px; z-index: 1; }
+
+    /* Action Forms & Tables */
+    .form-box { background: #fff; padding: 18px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+    .form-box h3 { margin-top: 0; font-size: 16px; }
+    input { font: inherit; padding: 9px 12px; border: 1px solid #d1d5db; border-radius: 8px; width: 100%; margin-bottom: 12px; }
+    button.btn { background: #0f7a4d; color: #fff; border: none; padding: 10px 16px; border-radius: 8px; font-weight: 600; cursor: pointer; width: 100%; }
+    button.btn:hover { background: #0b5e3a; }
+    button.btn-danger { background: #ef4444; color: white; border: none; padding: 5px 10px; border-radius: 6px; cursor: pointer; }
+
+    /* Data Table */
+    .table-container { background: #fff; border-radius: 12px; padding: 18px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+    table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    th, td { text-align: left; padding: 12px 14px; border-bottom: 1px solid #e5e7eb; }
+    th { color: #6b7280; font-weight: 600; background: #f9fafb; }
+    .badge { padding: 3px 8px; border-radius: 999px; font-size: 12px; font-weight: 600; }
+    .badge.on { background: #d1fae5; color: #065f46; }
+    .badge.off { background: #fee2e2; color: #991b1b; }
+  </style>
+</head>
+<body>
+
+  <!-- Sidebar Navigasi -->
+  <div id="sidebar">
+    <div>
+      <div class="logo">☕ Gerobak Admin</div>
+      <ul class="nav-list">
+        <li class="nav-item active"><a href="#">Dashboard Pemantauan</a></li>
+      </ul>
+    </div>
+    <div class="user-info">
+      <span id="adminName">Admin</span>
+      <a href="#" id="logoutBtn" style="color:#ef4444; text-decoration:none;">Keluar</a>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <div id="main-content">
+    <div class="header">
+      <h2>Ringkasan Operasional Gerobak</h2>
+    </div>
+
+    <!-- Ringkasan Stat Cards -->
+    <div class="stats-grid">
+      <div class="card">
+        <div class="title">Total Gerobak</div>
+        <div class="value" id="stTotal">0</div>
+      </div>
+      <div class="card">
+        <div class="title">Gerobak Online (Buka)</div>
+        <div class="value" id="stOnline">0</div>
+      </div>
+      <div class="card">
+        <div class="title">Gerobak Offline (Tutup)</div>
+        <div class="value" id="stOffline">0</div>
+      </div>
+    </div>
+
+    <!-- Peta Monitoring + Form Tambah Gerobak -->
+    <div class="dashboard-body">
+      <div class="map-container">
+        <h3 style="margin:0 0 10px;">Peta Lokasi Real-Time</h3>
+        <div id="adminMap"></div>
+      </div>
+
+      <div class="form-box">
+        <h3>Pendaftaran Gerobak Baru</h3>
+        <form id="addCartForm">
+          <label style="font-size:12px; color:#6b7280;">Nama Gerobak / Unit</label>
+          <input id="cName" placeholder="Contoh: Gerobak Cabang 4" required>
+          <label style="font-size:12px; color:#6b7280;">Username Abang</label>
+          <input id="cUser" placeholder="Username login abang" required>
+          <label style="font-size:12px; color:#6b7280;">Password Abang</label>
+          <input id="cPass" type="password" placeholder="Password login abang" required>
+          <button class="btn" type="submit">Daftarkan Gerobak</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Tabel Manajemen Gerobak -->
+    <div class="table-container">
+      <h3>Daftar Gerobak & Abang Keliling</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>ID Gerobak</th>
+            <th>Nama Gerobak</th>
+            <th>Abang Penanggung Jawab</th>
+            <th>Status Operator</th>
+            <th>Jumlah Menu</th>
+            <th>Aksi</th>
+          </tr>
+        </thead>
+        <tbody id="cartTableBody">
+          <!-- Diisi otomatis dari JavaScript -->
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script>
+    const $ = id => document.getElementById(id);
+    let token = localStorage.getItem('token'), me = null, carts = [];
+    const markers = {};
+
+    // 1. Verifikasi Akses Admin
+    async function initAdmin() {
+      if (!token) return logout();
+      try {
+        const r = await fetch('/api/me', { headers: { Authorization: 'Bearer ' + token } });
+        me = await r.json();
+        if (!r.ok || me.role !== 'admin') {
+          alert('Akses ditolak! Halaman ini khusus Admin.');
+          return logout();
+        }
+        $('adminName').textContent = me.username;
+        await loadData();
+        setInterval(loadData, 5000); // Auto update peta & status tiap 5 detik
+      } catch (err) {
+        logout();
+      }
+    }
+
+    // Logout Helper
+    function logout() {
+      localStorage.removeItem('token');
+      window.location.href = '/'; // Kembali ke halaman peta utama pelanggan
+    }
+    $('logoutBtn').onclick = logout;
+
+    // 2. Inisialisasi Peta Leaflet
+    const map = L.map('adminMap').setView([-6.2088, 106.8456], 12);
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19, attribution: '&copy; OpenStreetMap'
+    }).addTo(map);
+    const ICON = L.icon({ iconUrl: 'gerobak.png', iconSize: [40, 27], iconAnchor: [20, 27] });
+
+    // 3. Tarik Data Gerobak dari Server
+    async function loadData() {
+      try {
+        const r = await fetch('/api/carts');
+        carts = await r.json();
+        renderStats();
+        renderMap();
+        renderTable();
+      } catch (e) {
+        console.error("Gagal memperbarui data", e);
+      }
+    }
+
+    // Render Stats Kartu
+    function renderStats() {
+      $('stTotal').textContent = carts.length;
+      $('stOnline').textContent = carts.filter(c => c.online).length;
+      $('stOffline').textContent = carts.filter(c => !c.online).length;
+    }
+
+    // Render Marker Peta
+    function renderMap() {
+      const seen = new Set();
+      carts.forEach(c => {
+        seen.add(c.id);
+        let m = markers[c.id];
+        if (!m) {
+          m = markers[c.id] = L.marker([c.lat, c.lng], { icon: ICON }).addTo(map)
+            .bindPopup(`<b>${c.name}</b><br>Abang: ${c.abang}<br>Status: ${c.online ? 'Buka' : 'Tutup'}`);
+        } else {
+          m.setLatLng([c.lat, c.lng]);
+        }
+        m.setOpacity(c.online ? 1 : 0.4);
+      });
+      Object.keys(markers).forEach(id => {
+        if (!seen.has(id)) { map.removeLayer(markers[id]); delete markers[id]; }
+      });
+    }
+
+    // Render Tabel Data
+    function renderTable() {
+      const tbody = $('cartTableBody');
+      if (!carts.length) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:#9ca3af;">Belum ada gerobak terdaftar</td></tr>';
+        return;
+      }
+      tbody.innerHTML = carts.map(c => `
+        <tr>
+          <td><code>${c.id}</code></td>
+          <td><b>${c.name}</b></td>
+          <td>${c.abang}</td>
+          <td><span class="badge ${c.online ? 'on' : 'off'}">${c.online ? 'Online' : 'Offline'}</span></td>
+          <td>${(c.menu || []).length} Menu</td>
+          <td>
+            <button class="btn-danger" onclick="deleteCart('${c.id}')">Hapus</button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    // 4. Tambah Gerobak Baru
+    $('addCartForm').onsubmit = async (e) => {
+      e.preventDefault();
+      const body = {
+        name: $('cName').value.trim(),
+        username: $('cUser').value.trim(),
+        password: $('cPass').value
+      };
+      try {
+        const r = await fetch('/api/carts', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+          body: JSON.stringify(body)
+        });
+        const res = await r.json();
+        if (!r.ok) throw new Error(res.error || 'Gagal menambahkan gerobak');
+        
+        // Reset Form
+        $('cName').value = ''; $('cUser').value = ''; $('cPass').value = '';
+        alert('Gerobak baru berhasil ditambahkan!');
+        loadData();
+      } catch (err) {
+        alert(err.message);
+      }
+    };
+
+    // 5. Hapus Gerobak
+    async function deleteCart(id) {
+      if (!confirm('Yakin ingin menghapus gerobak ini beserta akun abangnya?')) return;
+      try {
+        const r = await fetch('/api/carts/' + id, {
+          method: 'DELETE',
+          headers: { Authorization: 'Bearer ' + token }
+        });
+        if (!r.ok) throw new Error('Gagal menghapus gerobak');
+        loadData();
+      } catch (err) {
+        alert(err.message);
+      }
+    }
+
+    // Jalankan Saat Halaman Dimuat
+    initAdmin();
+  </script>
+</body>
+</html>

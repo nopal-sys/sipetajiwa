@@ -6,12 +6,6 @@
       "role": "admin"
     },
     {
-      "username": "nopal",
-      "pass": "5f4229366b09c905:ec1a66df0f2c08844ac5905cbbc7d2a065fbb2be725f695a4a05863f55c14478",
-      "role": "abang",
-      "cartId": "2f4a9703e40c"
-    },
-    {
       "username": "yono",
       "pass": "e8febf6b922fc77a:54820a08d1385171165d37e09fb5dc0713a5c529d101e101f3ace02844f28f99",
       "role": "abang",
@@ -22,26 +16,15 @@
       "pass": "90d8eade323276c3:a8e68af5b1ec901f005105b650c89854ad6a24b5c1bfe194ffbf71e0ee1c4492",
       "role": "abang",
       "cartId": "f48a45ac7dcd"
+    },
+    {
+      "username": "roy1",
+      "pass": "0f3ed634ad17ac7a:ec6f2a14a2b1c305ee5d0f916e047835885e5b451dd8eff5232d0b554f5b2a03",
+      "role": "abang",
+      "cartId": "07e67039f6d6"
     }
   ],
   "carts": [
-    {
-      "id": "2f4a9703e40c",
-      "name": "1",
-      "abang": "nopal",
-      "lat": -6.25774172351961,
-      "lng": 107.0064465324741,
-      "online": true,
-      "updated": 1793767926686,
-      "menu": [
-        {
-          "id": "0962a2489ffd",
-          "name": "kopi",
-          "price": 10,
-          "available": true
-        }
-      ]
-    },
     {
       "id": "b07c8fcecfe6",
       "name": "2",
@@ -61,6 +44,23 @@
       "online": true,
       "updated": 1793768014210,
       "menu": []
+    },
+    {
+      "id": "07e67039f6d6",
+      "name": "royyy",
+      "abang": "roy1",
+      "lat": -6.333914075965527,
+      "lng": 107.03021,
+      "online": false,
+      "updated": 1793881948814,
+      "menu": [
+        {
+          "id": "0306e9e291a3",
+          "name": "americano",
+          "price": 40000,
+          "available": true
+        }
+      ]
     }
   ]
 }
