@@ -51,14 +51,17 @@
       "abang": "roy1",
       "lat": -6.333914075965527,
       "lng": 107.03021,
-      "online": false,
-      "updated": 1793881948814,
+      "online": true,
+      "updated": 1793903005232,
       "menu": [
         {
-          "id": "0306e9e291a3",
-          "name": "americano",
-          "price": 40000,
-          "available": true
+          "id": "4d64f3101c74",
+          "productId": "e6df2b5b7a17",
+          "name": "americano ice",
+          "price": 15000,
+          "image": "/catalog/imagesmenu/1793902957310-554987813.jpg",
+          "available": true,
+          "stock": 35
         }
       ]
     }

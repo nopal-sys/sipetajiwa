@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Panel Penjual - Gerobak Sejuta Jiwa</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: system-ui, -apple-system, sans-serif; background: #f4f6f8; color: #1c2a22; display: flex; height: 100vh; overflow: hidden; }
+
+    /* Sidebar */
+    #sidebar { width: 250px; background: #111827; color: #fff; display: flex; flex-direction: column; justify-content: space-between; padding: 20px 0; }
+    .logo { font-size: 18px; font-weight: bold; padding: 0 20px 20px; border-bottom: 1px solid #1f2937; color: #10b981; }
+    .nav-list { list-style: none; padding: 10px 0; margin: 0; }
+    .nav-item a { display: block; padding: 12px 20px; color: #9ca3af; text-decoration: none; font-size: 14px; font-weight: 500; cursor: pointer; }
+    .nav-item.active a, .nav-item a:hover { background: #1f2937; color: #10b981; }
+    .user-info { padding: 15px 20px; border-top: 1px solid #1f2937; font-size: 13px; color: #9ca3af; display: flex; justify-content: space-between; align-items: center; }
+
+    /* Main Content */
+    #main-content { flex: 1; overflow-y: auto; padding: 24px; display: flex; flex-direction: column; gap: 20px; }
+    .header { display: flex; justify-content: space-between; align-items: center; }
+    h2 { margin: 0; font-size: 22px; }
+
+    .card { background: #fff; padding: 18px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); margin-bottom: 20px; }
+    .table-container { background: #fff; border-radius: 12px; padding: 18px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+    table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    th, td { text-align: left; padding: 12px 14px; border-bottom: 1px solid #e5e7eb; }
+    th { color: #6b7280; font-weight: 600; background: #f9fafb; }
+    
+    .btn { background: #0f7a4d; color: #fff; border: none; padding: 8px 14px; border-radius: 6px; font-weight: 600; cursor: pointer; }
+    .btn:hover { background: #0b5e3a; }
+    .btn-danger { background: #ef4444; color: white; border: none; padding: 6px 10px; border-radius: 6px; cursor: pointer; }
+    
+    /* Catalog Grid */
+    .catalog-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; }
+    .catalog-card { background: #fff; border: 1px solid #e5e7eb; border-radius: 10px; padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+    .catalog-card img { width: 100%; height: 120px; object-fit: cover; border-radius: 6px; background: #f3f4f6; }
+
+    .view-section { display: none; }
+    .view-section.active { display: block; }
+    .badge { padding: 3px 8px; border-radius: 999px; font-size: 12px; font-weight: 600; }
+    .badge.on { background: #d1fae5; color: #065f46; }
+    .badge.off { background: #fee2e2; color: #991b1b; }
+  </style>
+</head>
+<body>
+
+  <!-- Sidebar -->
+  <div id="sidebar">
+    <div>
+      <div class="logo">☕ Panel Penjual</div>
+      <ul class="nav-list">
+        <li class="nav-item active" id="navDashboard" onclick="switchView('dashboard')"><a href="#">Dashboard & Menu</a></li>
+        <li class="nav-item" id="navCatalog" onclick="switchView('catalog')"><a href="#">Pilih Katalog Master</a></li>
+      </ul>
+    </div>
+    <div class="user-info">
+      <span id="vendorName">Abang</span>
+      <a href="#" id="logoutBtn" style="color:#ef4444; text-decoration:none;">Keluar</a>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <div id="main-content">
+    
+    <!-- VIEW 1: DASHBOARD & MENU GEROBAK -->
+    <div id="viewDashboard" class="view-section active">
+      <div class="header">
+        <h2 id="cartTitle">Gerobak Saya</h2>
+        <div>
+          Status Toko: <span id="statusBadge" class="badge off">Offline</span>
+          <button class="btn" id="toggleStatusBtn" onclick="toggleOnline()" style="margin-left: 10px;">Buka Toko</button>
+        </div>
+      </div>
+
+      <div class="table-container" style="margin-top: 20px;">
+        <h3>Daftar Menu di Gerobak Anda</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Gambar</th>
+              <th>Nama Produk</th>
+              <th>Harga</th>
+              <th>Stok</th>
+              <th>Aksi</th>
+            </tr>
+          </thead>
+          <tbody id="vendorMenuBody">
+            <!-- Diisi JavaScript -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- VIEW 2: PILIH KATALOG MASTER -->
+    <div id="viewCatalog" class="view-section">
+      <div class="header">
+        <h2>Pilih Produk dari Katalog Master</h2>
+      </div>
+      <p style="color: #6b7280; font-size: 14px;">Klik "Tambahkan ke Gerobak" untuk memasukkan produk pilihan admin ke menu jualan Anda.</p>
+      <div class="catalog-grid" id="catalogGrid">
+        <!-- Diisi JavaScript -->
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    const $ = id => document.getElementById(id);
+    let token = localStorage.getItem('token'), me = null, myCart = null, catalog = [];
+
+    async function initVendor() {
+      if (!token) return logout();
+      try {
+        const rMe = await fetch('/api/me', { headers: { Authorization: 'Bearer ' + token } });
+        me = await rMe.json();
+        if (!rMe.ok || me.role !== 'abang') {
+          alert('Akses ditolak! Khusus Abang Gerobak.');
+          return logout();
+        }
+        $('vendorName').textContent = me.username;
+        await loadCartData();
+        await loadMasterCatalog();
+      } catch (err) {
+        logout();
+      }
+    }
+
+    function logout() {
+      localStorage.removeItem('token');
+      window.location.href = '/';
+    }
+    $('logoutBtn').onclick = logout;
+
+    // Switch View Tab
+    function switchView(view) {
+      if (view === 'dashboard') {
+        $('navDashboard').classList.add('active');
+        $('navCatalog').classList.remove('active');
+        $('viewDashboard').classList.add('active');
+        $('viewCatalog').classList.remove('active');
+      } else {
+        $('navCatalog').classList.add('active');
+        $('navDashboard').classList.remove('active');
+        $('viewCatalog').classList.add('active');
+        $('viewDashboard').classList.remove('active');
+      }
+    }
+
+    // Ambil Data Gerobak Sendiri
+    async function loadCartData() {
+      const res = await fetch('/api/carts');
+      const carts = await res.json();
+      myCart = carts.find(c => c.id === me.cartId);
+      if (!myCart) return;
+
+      $('cartTitle').textContent = myCart.name;
+      const badge = $('statusBadge');
+      const btn = $('toggleStatusBtn');
+      if (myCart.online) {
+        badge.className = 'badge on';
+        badge.textContent = 'Online (Buka)';
+        btn.textContent = 'Tutup Toko';
+        btn.style.background = '#ef4444';
+      } else {
+        badge.className = 'badge off';
+        badge.textContent = 'Offline (Tutup)';
+        btn.textContent = 'Buka Toko';
+        btn.style.background = '#0f7a4d';
+      }
+
+      renderVendorMenu();
+    }
+
+    // Render Menu di Gerobak Sendiri
+    function renderVendorMenu() {
+      const tbody = $('vendorMenuBody');
+      const menu = myCart.menu || [];
+      if (!menu.length) {
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#9ca3af;">Belum ada menu dipilih. Silakan pilih di menu "Pilih Katalog Master".</td></tr>';
+        return;
+      }
+      tbody.innerHTML = menu.map(m => `
+        <tr>
+          <td>${m.image ? `<img src="${m.image}" style="width:40px; height:40px; object-fit:cover; border-radius:4px;">` : 'No Image'}</td>
+          <td><b>${m.name}</b></td>
+          <td>Rp ${m.price.toLocaleString()}</td>
+          <td><b>${m.stock !== undefined ? m.stock : 0}</b></td>
+          <td>
+            <button class="btn" style="padding:4px 8px; font-size:12px; margin-right:5px;" onclick="updateStock('${m.id}', ${m.stock !== undefined ? m.stock : 0})">Ubah Stok</button>
+            <button class="btn-danger" onclick="deleteMenu('${m.id}')">Hapus</button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    // Toggle Status Online/Offline
+    async function toggleOnline() {
+      const newStatus = !myCart.online;
+      await fetch(`/api/carts/${myCart.id}/online`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+        body: JSON.stringify({ online: newStatus })
+      });
+      loadCartData();
+    }
+
+    // Ambil Katalog Master
+    async function loadMasterCatalog() {
+      const res = await fetch('/api/catalog');
+      catalog = await res.json();
+      const grid = $('catalogGrid');
+      if (!catalog.length) {
+        grid.innerHTML = '<p style="color:#6ca3af;">Belum ada produk master dari admin.</p>';
+        return;
+      }
+      grid.innerHTML = catalog.map(p => `
+        <div class="catalog-card">
+          ${p.image ? `<img src="${p.image}">` : '<div style="height:120px; background:#eee; display:flex; align-items:center; justify-content:center; font-size:12px; color:#aaa;">No Image</div>'}
+          <div style="font-weight:bold; font-size:15px;">${p.name}</div>
+          <div style="color:#0f7a4d; font-weight:600;">Rp ${p.price.toLocaleString()}</div>
+          <button class="btn" onclick="addToMyCart('${p.id}')">Tambahkan ke Gerobak</button>
+        </div>
+      `).join('');
+    }
+
+    // Tambah Produk ke Gerobak dari Katalog
+    async function addToMyCart(productId) {
+      try {
+        const res = await fetch(`/api/carts/${myCart.id}/menu`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+          body: JSON.stringify({ productId })
+        });
+        const result = await res.json();
+        if (!res.ok) throw new Error(result.error || 'Gagal menambah menu');
+        alert('Produk berhasil ditambahkan ke gerobak Anda!');
+        loadCartData();
+        switchView('dashboard');
+      } catch (err) {
+        alert(err.message);
+      }
+    }
+
+    // Ubah Stok
+    async function updateStock(itemId, currentStock) {
+      const input = prompt('Masukkan jumlah stok baru:', currentStock);
+      if (input === null) return;
+      const newStock = parseInt(input);
+      if (isNaN(newStock) || newStock < 0) return alert('Angka stok tidak valid');
+
+      await fetch(`/api/carts/${myCart.id}/menu/${itemId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+        body: JSON.stringify({ stock: newStock })
+      });
+      loadCartData();
+    }
+
+    // Hapus Menu dari Gerobak
+    async function deleteMenu(itemId) {
+      if (!confirm('Yakin ingin menghapus menu ini dari gerobak?')) return;
+      await fetch(`/api/carts/${myCart.id}/menu/${itemId}`, {
+        method: 'DELETE',
+        headers: { Authorization: 'Bearer ' + token }
+      });
+      loadCartData();
+    }
+
+    initVendor();
+  </script>
+</body>
+</html>

@@ -7,7 +7,7 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <style>
   html, body { height: 100%; margin: 0; font: 15px system-ui, sans-serif; color: #1c2a22; }
-  #map { position: absolute; inset: 0; }              /* peta full layar */
+  #map { position: absolute; inset: 0; }            /* peta full layar */
   #bar { position: absolute; top: 10px; left: 10px; right: 10px; z-index: 1000;
          display: flex; justify-content: space-between; gap: 8px; pointer-events: none; }
   #bar > * { pointer-events: auto; }
@@ -20,7 +20,7 @@
   #panel:empty { display: none; }
   @media (min-width: 760px) {
     #panel { left: auto; right: 10px; top: 60px; bottom: auto; width: 340px;
-              max-height: calc(100% - 80px); border-radius: 14px; box-shadow: 0 2px 12px #0004; }
+             max-height: calc(100% - 80px); border-radius: 14px; box-shadow: 0 2px 12px #0004; }
   }
   .pin { font-size: 28px; text-align: center; line-height: 30px; }
   h3 { margin: 0 0 4px; font-size: 17px; }
@@ -29,10 +29,8 @@
          padding: 7px 0; border-top: 1px solid #e3e8e4; }
   .tag { font-size: 12px; padding: 2px 8px; border-radius: 999px; background: #e0f2e9; color: #0f7a4d; }
   .tag.off { background: #fbe4e1; color: #b8392b; }
-  .box { border-bottom: 1px solid #d5ddd7; padding-bottom: 12px; margin-bottom: 12px; }
   button.s { border: 1px solid #cdd6d0; background: #fff; border-radius: 8px; padding: 5px 10px; cursor: pointer; font: inherit; font-size: 13px; }
   button.s.p { background: #0f7a4d; color: #fff; border-color: #0f7a4d; }
-  button.s.d { color: #b8392b; }
   input { font: inherit; padding: 7px 9px; border: 1px solid #cdd6d0; border-radius: 8px; width: 100%; box-sizing: border-box; margin: 3px 0; }
   dialog { border: 0; border-radius: 14px; padding: 18px; width: min(320px, 90vw); }
 </style>
@@ -48,7 +46,7 @@
 <dialog id="dlg">
   <form id="loginForm">
     <h3>Masuk</h3>
-    <p class="mut">Untuk abang gerobak dan admin. Customer tidak perlu masuk.</p>
+    <p class="mut">Khusus untuk abang gerobak dan admin.</p>
     <input id="lu" placeholder="Username" autocomplete="username" required>
     <input id="lp" type="password" placeholder="Password" autocomplete="current-password" required>
     <p id="lerr" class="mut" style="color:#b8392b"></p> 
@@ -84,21 +82,13 @@ async function api(method, url, body) {
   if (!r.ok) throw new Error(data.error || 'Terjadi kesalahan');
   return data;
 }
-const act = (p) => p.then(refresh).catch(e => alert(e.message));
 
 // ---------- Ambil data gerobak (polling tiap 5 detik) ----------
 async function refresh() {
   try { carts = await api('GET', '/api/carts'); } catch (e) { return; }
   
-  // Menentukan gerobak mana saja yang boleh tampil di peta berdasarkan hak akses
-  let displayCarts = carts;
-  if (!me) {
-    // Customer (belum login) hanya melihat gerobak yang online
-    displayCarts = carts.filter(c => c.online);
-  } else if (me.role === 'abang') {
-    // Abang melihat semua yang online ditambah gerobaknya sendiri meski sedang offline
-    displayCarts = carts.filter(c => c.online || c.id === me.cartId);
-  }
+  // Customer (halaman utama) hanya melihat gerobak yang online/buka
+  let displayCarts = carts.filter(c => c.online);
 
   const seen = new Set();
   displayCarts.forEach(c => {
@@ -108,7 +98,7 @@ async function refresh() {
       m = markers[c.id] = L.marker([c.lat, c.lng], { icon: ICON }).addTo(map)
         .on('click', () => { selId = c.id; render(true); });
     } else m.setLatLng([c.lat, c.lng]);
-    m.setOpacity(c.online ? 1 : 0.4);
+    m.setOpacity(1);
   });
   Object.keys(markers).forEach(id => {
     if (!seen.has(id)) { map.removeLayer(markers[id]); delete markers[id]; }
@@ -117,15 +107,11 @@ async function refresh() {
 }
 setInterval(refresh, 5000);
 
-// ---------- Tampilan panel ----------
-const canManage = c => me && (me.role === 'admin' || me.cartId === c.id);
-
+// ---------- Tampilan panel (Khusus Customer melihat menu gerobak) ----------
 function render(force) {
   const p = $('panel');
-  // jangan hapus ketikan user saat auto-refresh
   if (!force && p.contains(document.activeElement) && document.activeElement.tagName === 'INPUT') return;
   let h = '';
-  if (me && me.role === 'abang') h += abangBox();
   const c = carts.find(x => x.id === selId);
   if (c) h += detail(c);
   p.innerHTML = h;
@@ -133,59 +119,30 @@ function render(force) {
 }
 
 function detail(c) {
-  const mg = canManage(c);
-  const items = mg ? c.menu : c.menu.filter(m => m.available);
-  const habis = mg ? [] : c.menu.filter(m => !m.available);
-  let h = `<h3>${esc(c.name)} <span class="tag ${c.online ? '' : 'off'}">${c.online ? 'Buka' : 'Tutup'}</span></h3>
+  // Customer hanya melihat menu yang available (tersedia)
+  const items = (c.menu || []).filter(m => m.available);
+  let h = `<h3>${esc(c.name)} <span class="tag">${c.online ? 'Buka' : 'Tutup'}</span></h3>
     <div class="mut">Abang: ${esc(c.abang)} · update ${new Date(c.updated).toLocaleTimeString('id-ID')}</div>
-    <div style="margin-top:8px"><b>${mg ? 'Kelola menu' : 'Menu tersedia'}</b></div>`;
-  if (!items.length) h += `<p class="mut">${mg ? 'Belum ada menu. Tambahkan di bawah.' : 'Belum ada menu yang tersedia.'}</p>`;
-  items.forEach(m => {
-    h += `<div class="row"><span>${esc(m.name)}<br><span class="mut">${rp(m.price)}</span></span>`;
-    h += mg
-      ? `<span><button class="s ${m.available ? '' : 'd'}" onclick="toggleItem('${c.id}','${m.id}',${!m.available})">${m.available ? 'Tersedia' : 'Habis'}</button>
-         <button class="s d" onclick="delItem('${c.id}','${m.id}')">×</button></span>`
-      : `<b>${rp(m.price)}</b>`;
-    h += '</div>';
-  });
-  if (habis.length) h += `<p class="mut">Habis: ${habis.map(m => esc(m.name)).join(', ')}</p>`;
-  if (mg) h += `<div style="margin-top:8px"><input id="mn" placeholder="Nama menu"><input id="mp" type="number" placeholder="Harga">
-      <button class="s p" onclick="addItem('${c.id}')">Tambah menu</button></div>`;
+    <div style="margin-top:8px"><b>Menu tersedia</b></div>`;
+  
+  if (!items.length) {
+    h += `<p class="mut">Belum ada menu yang tersedia di gerobak ini.</p>`;
+  } else {
+    items.forEach(m => {
+      const imgTag = m.image ? `<img src="${m.image}" style="width:36px; height:36px; object-fit:cover; border-radius:4px; margin-right:8px; vertical-align:middle;">` : '';
+      h += `<div class="row">
+        <span style="display:flex; align-items:center;">
+          ${imgTag}
+          <span>${esc(m.name)}<br><span class="mut">${rp(m.price)}</span></span>
+        </span>
+        <b>${rp(m.price)}</b>
+      </div>`;
+    });
+  }
   return h;
 }
 
-function abangBox() {
-  const c = carts.find(x => x.id === me.cartId);
-  if (!c) return '';
-  return `<div class="box"><h3>Panel abang</h3>
-    <button class="s ${c.online ? '' : 'p'}" onclick="toggleOnline('${c.id}',${!c.online})">${c.online ? 'Tutup gerobak' : 'Buka gerobak'}</button>
-    <button class="s ${watchId === null ? 'p' : ''}" onclick="toggleGps()">${watchId === null ? 'Bagikan lokasi GPS' : 'Stop bagikan lokasi'}</button>
-    <button class="s" onclick="selId='${c.id}';render(true)">Lihat gerobak saya</button></div>`;
-}
-
-// ---------- Aksi ----------
-const toggleItem = (cid, iid, v) => act(api('PATCH', `/api/carts/${cid}/menu/${iid}`, { available: v }));
-const delItem = (cid, iid) => act(api('DELETE', `/api/carts/${cid}/menu/${iid}`));
-const toggleOnline = (cid, v) => act(api('PUT', `/api/carts/${cid}/online`, { online: v }));
-function addItem(cid) {
-  const name = $('mn').value.trim(); if (!name) return;
-  act(api('POST', `/api/carts/${cid}/menu`, { name, price: $('mp').value }).then(() => render(true)));
-}
-
-// GPS abang: kirim posisi ke server tiap ada update (max 1x / 4 detik)
-let watchId = null, lastSend = 0;
-function toggleGps() {
-  if (watchId !== null) { navigator.geolocation.clearWatch(watchId); watchId = null; return render(true); }
-  if (!navigator.geolocation) return alert('Browser tidak mendukung GPS');
-  watchId = navigator.geolocation.watchPosition(pos => {
-    if (Date.now() - lastSend < 4000) return;
-    lastSend = Date.now();
-    api('PUT', `/api/carts/${me.cartId}/location`, { lat: pos.coords.latitude, lng: pos.coords.longitude }).then(refresh).catch(() => {});
-  }, err => { alert('GPS gagal: ' + err.message); watchId = null; render(true); }, { enableHighAccuracy: true });
-  render(true);
-}
-
-// Customer: cari lokasi sendiri (izin baru diminta saat tombol ditekan)
+// Customer: cari lokasi sendiri
 let meMarker = null;
 $('near').onclick = () => {
   if (!navigator.geolocation) return alert('Browser tidak mendukung GPS');
@@ -197,12 +154,16 @@ $('near').onclick = () => {
   }, () => alert('Lokasi tidak bisa diakses. Cek izin lokasi di browser.'));
 };
 
-// ---------- Login / logout ----------
+// ---------- Login / logout & Redireksi Role ----------
 const dlg = $('dlg');
 $('auth').onclick = () => {
-  if (me) { if (watchId !== null) toggleGps(); token = null; me = null; localStorage.removeItem('token'); selId = null; return render(true); }
+  if (me) { 
+    token = null; me = null; localStorage.removeItem('token'); selId = null; 
+    return render(true); 
+  }
   $('lerr').textContent = ''; dlg.showModal();
 };
+
 $('loginForm').onsubmit = async e => {
   e.preventDefault();
   try {
@@ -211,26 +172,33 @@ $('loginForm').onsubmit = async e => {
     me = { username: r.username, role: r.role, cartId: r.cartId };
     dlg.close(); $('lp').value = '';
 
-    // Jika yang login admin, arahkan ke halaman khusus admin
+    // Redireksi otomatis berdasarkan role setelah login berhasil
     if (me.role === 'admin') {
       window.location.href = '/admin.html';
       return;
+    } else if (me.role === 'abang') {
+      window.location.href = '/vendor.html';
+      return;
     }
 
-    if (me.cartId) selId = me.cartId;
     render(true);
   } catch (err) { $('lerr').textContent = err.message; }
 };
 
-// ---------- Mulai ----------
+// ---------- Cek Sesi Saat Halaman Dimuat ----------
 (async () => {
   if (token) { 
     try { 
       me = await api('GET', '/api/me'); 
-      // Jika token tersimpan adalah admin, langsung arahkan ke admin.html
-      if (me && me.role === 'admin') {
-        window.location.href = '/admin.html';
-        return;
+      if (me) {
+        // Jika sudah login dan membuka index.html, langsung lempar ke halaman masing-masing role
+        if (me.role === 'admin') {
+          window.location.href = '/admin.html';
+          return;
+        } else if (me.role === 'abang') {
+          window.location.href = '/vendor.html';
+          return;
+        }
       }
     } catch (e) { 
       token = null; 

@@ -99,18 +99,53 @@
         <div id="adminMap"></div>
       </div>
 
-      <div class="form-box">
-        <h3>Pendaftaran Gerobak Baru</h3>
-        <form id="addCartForm">
-          <label style="font-size:12px; color:#6b7280;">Nama Gerobak / Unit</label>
-          <input id="cName" placeholder="Contoh: Gerobak Cabang 4" required>
-          <label style="font-size:12px; color:#6b7280;">Username Abang</label>
-          <input id="cUser" placeholder="Username login abang" required>
-          <label style="font-size:12px; color:#6b7280;">Password Abang</label>
-          <input id="cPass" type="password" placeholder="Password login abang" required>
-          <button class="btn" type="submit">Daftarkan Gerobak</button>
-        </form>
+      <div style="display: flex; flex-direction: column; gap: 20px;">
+        <!-- Form Pendaftaran Gerobak -->
+        <div class="form-box">
+          <h3>Pendaftaran Gerobak Baru</h3>
+          <form id="addCartForm">
+            <label style="font-size:12px; color:#6b7280;">Nama Gerobak / Unit</label>
+            <input id="cName" placeholder="Contoh: Gerobak Cabang 4" required>
+            <label style="font-size:12px; color:#6b7280;">Username Abang</label>
+            <input id="cUser" placeholder="Username login abang" required>
+            <label style="font-size:12px; color:#6b7280;">Password Abang</label>
+            <input id="cPass" type="password" placeholder="Password login abang" required>
+            <button class="btn" type="submit">Daftarkan Gerobak</button>
+          </form>
+        </div>
+
+        <!-- Form Tambah Produk Katalog Master & Gambar -->
+        <div class="form-box">
+          <h3>Kelola Master Katalog Produk</h3>
+          <form id="catalogForm" onsubmit="addCatalogProduct(event)">
+            <label style="font-size:12px; color:#6b7280;">Nama Produk</label>
+            <input id="productName" placeholder="Contoh: Es Teh Manis" required>
+            <label style="font-size:12px; color:#6b7280;">Harga (Rp)</label>
+            <input id="productPrice" type="number" placeholder="Contoh: 5000" required>
+            <label style="font-size:12px; color:#6b7280;">Foto Produk</label>
+            <input id="productImage" type="file" accept="image/*" required style="padding: 6px;">
+            <button class="btn" type="submit">Tambah ke Katalog</button>
+          </form>
+        </div>
       </div>
+    </div>
+
+    <!-- Tabel Master Katalog -->
+    <div class="table-container">
+      <h3>Daftar Produk Master Katalog</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Gambar</th>
+            <th>Nama Produk</th>
+            <th>Harga</th>
+            <th>Aksi</th>
+          </tr>
+        </thead>
+        <tbody id="catalogTableBody">
+          <!-- Diisi otomatis dari JavaScript -->
+        </tbody>
+      </table>
     </div>
 
     <!-- Tabel Manajemen Gerobak -->
@@ -137,7 +172,7 @@
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script>
     const $ = id => document.getElementById(id);
-    let token = localStorage.getItem('token'), me = null, carts = [];
+    let token = localStorage.getItem('token'), me = null, carts = [], catalog = [];
     const markers = {};
 
     // 1. Verifikasi Akses Admin
@@ -152,6 +187,7 @@
         }
         $('adminName').textContent = me.username;
         await loadData();
+        await loadMasterCatalog();
         setInterval(loadData, 5000); // Auto update peta & status tiap 5 detik
       } catch (err) {
         logout();
@@ -161,7 +197,7 @@
     // Logout Helper
     function logout() {
       localStorage.removeItem('token');
-      window.location.href = '/'; // Kembali ke halaman peta utama pelanggan
+      window.location.href = '/'; // Kembali ke halaman utama
     }
     $('logoutBtn').onclick = logout;
 
@@ -211,7 +247,7 @@
       });
     }
 
-    // Render Tabel Data
+    // Render Tabel Data Gerobak
     function renderTable() {
       const tbody = $('cartTableBody');
       if (!carts.length) {
@@ -249,7 +285,6 @@
         const res = await r.json();
         if (!r.ok) throw new Error(res.error || 'Gagal menambahkan gerobak');
         
-        // Reset Form
         $('cName').value = ''; $('cUser').value = ''; $('cPass').value = '';
         alert('Gerobak baru berhasil ditambahkan!');
         loadData();
@@ -268,6 +303,73 @@
         });
         if (!r.ok) throw new Error('Gagal menghapus gerobak');
         loadData();
+      } catch (err) {
+        alert(err.message);
+      }
+    }
+
+    // 6. Manajemen Master Katalog & Upload Gambar (FormData)
+    async function loadMasterCatalog() {
+      try {
+        const r = await fetch('/api/catalog');
+        catalog = await r.json();
+        const tbody = $('catalogTableBody');
+        if (!catalog.length) {
+          tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:#9ca3af;">Belum ada produk di master katalog</td></tr>';
+          return;
+        }
+        tbody.innerHTML = catalog.map(p => `
+          <tr>
+            <td>
+              ${p.image ? `<img src="${p.image}" style="width: 40px; height: 40px; object-fit: cover; border-radius: 4px;" />` : '<span style="color:#9ca3af; font-size:12px;">No Image</span>'}
+            </td>
+            <td><b>${p.name}</b></td>
+            <td>Rp ${p.price.toLocaleString()}</td>
+            <td>
+              <button class="btn-danger" onclick="deleteCatalogProduct('${p.id}')">Hapus</button>
+            </td>
+          </tr>
+        `).join('');
+      } catch (e) {
+        console.error("Gagal memuat master katalog", e);
+      }
+    }
+
+    async function addCatalogProduct(e) {
+      e.preventDefault();
+      const formData = new FormData();
+      formData.append('name', $('productName').value.trim());
+      formData.append('price', $('productPrice').value);
+      formData.append('image', $('productImage').files[0]);
+
+      try {
+        const r = await fetch('/api/admin/catalog', {
+          method: 'POST',
+          headers: { Authorization: 'Bearer ' + token },
+          body: formData
+        });
+        const res = await r.json();
+        if (!r.ok) throw new Error(res.error || 'Gagal menambahkan produk ke katalog');
+
+        $('productName').value = '';
+        $('productPrice').value = '';
+        $('productImage').value = '';
+        alert('Produk berhasil ditambahkan ke master katalog!');
+        loadMasterCatalog();
+      } catch (err) {
+        alert(err.message);
+      }
+    }
+
+    async function deleteCatalogProduct(productId) {
+      if (!confirm('Yakin ingin menghapus produk ini dari master katalog?')) return;
+      try {
+        const r = await fetch('/api/admin/catalog/' + productId, {
+          method: 'DELETE',
+          headers: { Authorization: 'Bearer ' + token }
+        });
+        if (!r.ok) throw new Error('Gagal menghapus produk katalog');
+        loadMasterCatalog();
       } catch (err) {
         alert(err.message);
       }
