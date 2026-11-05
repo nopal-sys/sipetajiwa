@@ -62,6 +62,15 @@
           "image": "/catalog/imagesmenu/1793902957310-554987813.jpg",
           "available": true,
           "stock": 35
+        },
+        {
+          "id": "a7a26a8d306f",
+          "productId": "f3e8d3d28497",
+          "name": "es kopi susu",
+          "price": 25000,
+          "image": "/catalog/imagesmenu/1793907423367-493580271.jpg",
+          "available": true,
+          "stock": 10
         }
       ]
     }

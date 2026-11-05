@@ -5,6 +5,12 @@
       "name": "americano ice",
       "price": 15000,
       "image": "/catalog/imagesmenu/1793902957310-554987813.jpg"
+    },
+    {
+      "id": "f3e8d3d28497",
+      "name": "es kopi susu",
+      "price": 25000,
+      "image": "/catalog/imagesmenu/1793907423367-493580271.jpg"
     }
   ]
 }
