@@ -3,56 +3,192 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#E31E24">
   <title>Dashboard Penjual - Gerobak Sejuta Jiwa</title>
+  <link rel="icon" href="gerobak.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
   <style>
-    * { box-sizing: border-box; }
-    body { margin: 0; font-family: system-ui, -apple-system, sans-serif; background: #f4f6f8; color: #1c2a22; display: flex; height: 100vh; overflow: hidden; }
+    :root {
+      --red: #E31E24; --red-d: #B80F16; --red-l: #FFE9E7;
+      --navy: #1B1F6B; --navy-d: #0F1244; --navy-l: #ECEDFB;
+      --yellow: #FFD400; --cream: #FFF8F1; --bg: #FBF4EE;
+      --ink: #1B1A33; --mut: #6F6C85; --line: #F0E7E0;
+      --ok: #0E9F57; --ok-bg: #DDF6E9;
+      --font: 'Plus Jakarta Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+    }
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    body { margin: 0; font: 14.5px/1.5 var(--font); background: var(--bg); color: var(--ink); display: flex; height: 100vh; overflow: hidden; }
 
     /* Sidebar Navigation */
-    #sidebar { width: 250px; background: #111827; color: #fff; display: flex; flex-direction: column; justify-content: space-between; padding: 20px 0; }
-    .logo { font-size: 18px; font-weight: bold; padding: 0 20px 20px; border-bottom: 1px solid #1f2937; color: #10b981; }
-    .nav-list { list-style: none; padding: 10px 0; margin: 0; }
-    .nav-item a { display: block; padding: 12px 20px; color: #9ca3af; text-decoration: none; font-size: 14px; font-weight: 500; }
-    .nav-item.active a, .nav-item a:hover { background: #1f2937; color: #10b981; }
-    .user-info { padding: 15px 20px; border-top: 1px solid #1f2937; font-size: 13px; color: #9ca3af; display: flex; justify-content: space-between; align-items: center; }
+    #sidebar { width: 260px; flex: none; color: #fff; display: flex; flex-direction: column; justify-content: space-between; padding: 22px 14px 16px;
+               background: radial-gradient(circle at 1px 1px, rgba(255,255,255,.06) 1.4px, transparent 0) 0 0 / 14px 14px,
+                           linear-gradient(180deg, var(--navy) 0%, var(--navy-d) 100%); }
+    .logo { display: flex; align-items: center; gap: 12px; padding: 4px 8px 20px; margin-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,.1); }
+    .logo-mark { width: 46px; height: 46px; border-radius: 14px; flex: none; display: grid; place-items: center;
+                 background: linear-gradient(135deg, var(--red), var(--red-d)); box-shadow: 0 8px 18px rgba(227,30,36,.45); }
+    .logo-mark img { width: 38px; filter: drop-shadow(0 2px 2px rgba(0,0,0,.3)); }
+    .logo-text { line-height: 1.15; }
+    .logo-text b { display: block; font-size: 16px; font-weight: 800; letter-spacing: -.2px; }
+    .logo-text small { font-size: 11px; font-weight: 700; color: var(--yellow); letter-spacing: .6px; text-transform: uppercase; }
+    .nav-list { list-style: none; padding: 8px 0; margin: 0; }
+    .nav-item a { display: flex; align-items: center; gap: 12px; padding: 12px 14px; color: rgba(255,255,255,.7); text-decoration: none;
+                  font-size: 14px; font-weight: 600; border-radius: 14px; transition: background .15s, color .15s; }
+    .nav-item a svg { width: 19px; height: 19px; flex: none; }
+    .nav-item.active a { background: linear-gradient(135deg, var(--red), var(--red-d)); color: #fff; box-shadow: 0 8px 18px rgba(227,30,36,.4); }
+    .nav-item:not(.active) a:hover { background: rgba(255,255,255,.08); color: #fff; }
+    .user-info { padding: 10px 10px 10px 12px; font-size: 13px; color: #fff; display: flex; justify-content: space-between; align-items: center; gap: 10px;
+                 background: rgba(255,255,255,.08); border-radius: 16px; }
+    .u-left { display: flex; align-items: center; gap: 10px; min-width: 0; }
+    .u-ava { width: 34px; height: 34px; border-radius: 50%; background: var(--yellow); color: var(--navy); display: grid; place-items: center; flex: none; }
+    .u-ava svg { width: 18px; height: 18px; }
+    #vendorName { font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    #logoutBtn { color: #fff !important; background: rgba(227,30,36,.9); padding: 7px 12px; border-radius: 10px; font-weight: 700; font-size: 12px;
+                 text-decoration: none; flex: none; transition: background .15s; }
+    #logoutBtn:hover { background: var(--red); }
 
     /* Main Content Area */
-    #main-content { flex: 1; overflow-y: auto; padding: 24px; display: flex; flex-direction: column; gap: 20px; }
-    .header { display: flex; justify-content: space-between; align-items: center; }
-    h2 { margin: 0; font-size: 22px; }
+    #main-content { flex: 1; min-width: 0; overflow-y: auto; padding: 26px; display: flex; flex-direction: column; gap: 22px; }
+    #main-content::-webkit-scrollbar { width: 8px; }
+    #main-content::-webkit-scrollbar-thumb { background: #E6DDD6; border-radius: 99px; }
+    .header { position: relative; overflow: hidden; border-radius: 26px; padding: 26px 28px; color: #fff; min-height: 128px; display: flex; align-items: center;
+              background: radial-gradient(circle at 1px 1px, rgba(255,255,255,.17) 1.5px, transparent 0) 0 0 / 14px 14px,
+                          linear-gradient(135deg, var(--red) 0%, var(--red-d) 100%);
+              box-shadow: 0 16px 36px rgba(227,30,36,.28); }
+    .header::after { content: ""; position: absolute; right: -40px; top: -50px; width: 190px; height: 190px; border-radius: 50%; background: var(--yellow); opacity: .95; }
+    .header img { position: absolute; right: 26px; bottom: 6px; height: 118px; z-index: 1; filter: drop-shadow(0 10px 10px rgba(0,0,0,.3)); }
+    .h-text { position: relative; z-index: 2; max-width: 70%; }
+    .h-eyebrow { display: inline-flex; align-items: center; gap: 8px; font-size: 11px; font-weight: 800; letter-spacing: .8px; text-transform: uppercase;
+                 background: rgba(255,255,255,.2); padding: 5px 12px; border-radius: 999px; margin-bottom: 10px; }
+    .h-eyebrow i { width: 7px; height: 7px; border-radius: 50%; background: var(--yellow); animation: pulse 1.6s infinite; }
+    h2 { margin: 0; font-size: 26px; font-weight: 800; letter-spacing: -.5px; line-height: 1.2; }
+    .h-sub { margin: 4px 0 0; font-size: 13px; color: rgba(255,255,255,.88); }
+    @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(255,212,0,.7); } 70%,100% { box-shadow: 0 0 0 8px rgba(255,212,0,0); } }
 
     /* Stat Cards */
-    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; }
-    .card { background: #fff; padding: 18px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
-    .card .title { font-size: 13px; color: #6b7280; font-weight: 500; }
-    .card .value { font-size: 26px; font-weight: bold; margin-top: 6px; color: #0f7a4d; }
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 16px; }
+    .card { display: flex; align-items: center; gap: 16px; background: #fff; padding: 20px; border-radius: 22px; border: 1px solid var(--line);
+            box-shadow: 0 6px 20px rgba(27,31,107,.05); transition: transform .2s, box-shadow .2s; }
+    .card:hover { transform: translateY(-3px); box-shadow: 0 14px 30px rgba(27,31,107,.1); }
+    .s-ic { width: 52px; height: 52px; border-radius: 16px; flex: none; display: grid; place-items: center; }
+    .s-ic svg { width: 26px; height: 26px; }
+    .s-ic.navy { background: var(--navy-l); color: var(--navy); }
+    .s-ic.green { background: var(--ok-bg); color: var(--ok); }
+    .s-ic.red { background: var(--red-l); color: var(--red); }
+    .s-ic.yellow { background: #FFF3C4; color: #B27B00; }
+    .card .title { font-size: 12.5px; color: var(--mut); font-weight: 600; }
+    .card .value { font-size: 30px; font-weight: 800; margin-top: 2px; color: var(--ink); letter-spacing: -.5px; line-height: 1.1; }
 
     /* Layout Dashboard (Map + Panel) */
-    .dashboard-body { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; }
-    @media (max-width: 900px) { .dashboard-body { grid-template-columns: 1fr; } }
+    .dashboard-body { display: grid; grid-template-columns: 1.7fr 1fr; gap: 22px; align-items: start; }
+    @media (max-width: 1100px) { .dashboard-body { grid-template-columns: 1fr; } }
 
     /* Map Box */
-    .map-container { background: #fff; border-radius: 12px; padding: 14px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); height: 420px; display: flex; flex-direction: column; }
-    #vendorMap { flex: 1; border-radius: 8px; z-index: 1; }
+    .map-container { background: #fff; border-radius: 24px; padding: 18px; border: 1px solid var(--line); box-shadow: 0 6px 20px rgba(27,31,107,.05);
+                     height: 520px; display: flex; flex-direction: column; }
+    .map-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+    .map-top h3 { margin: 0; }
+    .live { display: inline-flex; align-items: center; gap: 7px; font-size: 11px; font-weight: 800; letter-spacing: .6px; color: var(--ok); background: var(--ok-bg); padding: 5px 12px; border-radius: 999px; }
+    .live i { width: 7px; height: 7px; border-radius: 50%; background: var(--ok); animation: pulseG 1.6s infinite; }
+    @keyframes pulseG { 0% { box-shadow: 0 0 0 0 rgba(14,159,87,.6); } 70%,100% { box-shadow: 0 0 0 7px rgba(14,159,87,0); } }
+    #vendorMap { flex: 1; border-radius: 18px; z-index: 1; }
 
     /* Action Boxes & Tables */
-    .form-box { background: #fff; padding: 18px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
-    .form-box h3 { margin-top: 0; font-size: 16px; }
-    button.btn { background: #0f7a4d; color: #fff; border: none; padding: 10px 16px; border-radius: 8px; font-weight: 600; cursor: pointer; width: 100%; }
-    button.btn:hover { background: #0b5e3a; }
-    button.btn-sm { background: #0f7a4d; color: #fff; border: none; padding: 5px 10px; border-radius: 6px; cursor: pointer; font-size: 12px; margin-right: 5px; }
-    button.btn-sm:hover { background: #0b5e3a; }
-    button.btn-danger { background: #ef4444; color: white; border: none; padding: 5px 10px; border-radius: 6px; cursor: pointer; }
+    .form-box { background: #fff; padding: 22px; border-radius: 24px; border: 1px solid var(--line); box-shadow: 0 6px 20px rgba(27,31,107,.05); }
+    .form-box p { font-size: 13px !important; color: var(--mut) !important; margin: 0 0 14px !important; line-height: 1.55; }
+    .form-box.tip { background: linear-gradient(135deg, #FFF8D6, #FFF1B0); border-color: #FFE98A; }
+    .form-box.tip h3::before { background: linear-gradient(180deg, #E8B800, #C89B00); }
+    .form-box.tip p { color: #7A5F00 !important; margin: 0 !important; }
+    h3 { margin: 0 0 12px; font-size: 16.5px; font-weight: 800; color: var(--navy); letter-spacing: -.2px; display: flex; align-items: center; gap: 10px; }
+    h3::before { content: ""; width: 5px; height: 18px; border-radius: 9px; background: linear-gradient(180deg, var(--red), var(--red-d)); }
+    #locInfo { font-size: 12px !important; color: var(--navy) !important; font-weight: 600; background: var(--navy-l); padding: 9px 12px; border-radius: 12px; margin-bottom: 14px !important; }
+    button.btn { background: linear-gradient(135deg, var(--red), var(--red-d)); color: #fff; border: none; padding: 14px 16px; border-radius: 14px; font: 800 14px var(--font);
+                 cursor: pointer; width: 100%; box-shadow: 0 8px 20px rgba(227,30,36,.35); transition: transform .15s, box-shadow .15s, background .2s; }
+    button.btn:hover { transform: translateY(-1px); box-shadow: 0 12px 26px rgba(227,30,36,.45); }
+    button.btn:active { transform: scale(.98); }
+    button.btn.btn-stop { background: linear-gradient(135deg, var(--navy), var(--navy-d)); box-shadow: 0 8px 20px rgba(27,31,107,.35); }
+    button.btn.btn-stop:hover { box-shadow: 0 12px 26px rgba(27,31,107,.45); }
+    button.btn-sm { background: var(--navy-l); color: var(--navy); border: none; padding: 8px 14px; border-radius: 10px; cursor: pointer; font: 800 12.5px var(--font); margin-right: 6px; transition: background .15s, color .15s; }
+    button.btn-sm:hover { background: var(--navy); color: #fff; }
+    button.btn-sm.btn-add { background: linear-gradient(135deg, var(--red), var(--red-d)); color: #fff; margin-right: 0; box-shadow: 0 6px 14px rgba(227,30,36,.3); }
+    button.btn-sm.btn-add:hover { box-shadow: 0 9px 18px rgba(227,30,36,.42); }
+    button.btn-danger { background: var(--red-l); color: var(--red-d); border: 0; padding: 8px 14px; border-radius: 10px; cursor: pointer; font: 800 12.5px var(--font); transition: background .15s, color .15s; }
+    button.btn-danger:hover { background: var(--red); color: #fff; }
 
     /* Data Table */
-    .table-container { background: #fff; border-radius: 12px; padding: 18px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
-    table { width: 100%; border-collapse: collapse; font-size: 14px; }
-    th, td { text-align: left; padding: 12px 14px; border-bottom: 1px solid #e5e7eb; }
-    th { color: #6b7280; font-weight: 600; background: #f9fafb; }
-    .badge { padding: 3px 8px; border-radius: 999px; font-size: 12px; font-weight: 600; }
-    .badge.on { background: #d1fae5; color: #065f46; }
-    .badge.off { background: #fee2e2; color: #991b1b; }
+    .table-container { background: #fff; border-radius: 24px; padding: 22px; border: 1px solid var(--line); box-shadow: 0 6px 20px rgba(27,31,107,.05); overflow-x: auto; }
+    table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 14px; min-width: 560px; }
+    th, td { text-align: left; padding: 13px 14px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+    th { color: var(--mut); font-weight: 800; font-size: 11.5px; letter-spacing: .6px; text-transform: uppercase; background: var(--cream); white-space: nowrap; }
+    th:first-child { border-radius: 12px 0 0 12px; } th:last-child { border-radius: 0 12px 12px 0; }
+    tbody tr { transition: background .15s; }
+    tbody tr:hover { background: #FFFBF7; }
+    tbody tr:last-child td { border-bottom: 0; }
+    td.empty { text-align: center !important; color: var(--mut) !important; padding: 34px 14px; font-weight: 500; }
+    td.act { white-space: nowrap; }
+    .thumb { width: 48px; height: 48px; object-fit: cover; border-radius: 14px; display: block; box-shadow: 0 2px 8px rgba(0,0,0,.12); }
+    .noimg { display: inline-grid; place-items: center; width: 48px; height: 48px; border-radius: 14px; background: var(--red-l); color: var(--red-d); font-size: 9.5px; font-weight: 800; text-align: center; line-height: 1.1; }
+    .price { display: inline-block; font-weight: 800; font-size: 13px; color: var(--red-d); background: var(--red-l); padding: 5px 11px; border-radius: 999px; white-space: nowrap; }
+    .stock { display: inline-block; min-width: 40px; text-align: center; font-weight: 800; font-size: 13px; color: var(--ok); background: var(--ok-bg); padding: 5px 12px; border-radius: 999px; }
+    .stock.low { color: #B27B00; background: #FFF3C4; }
+    .stock.zero { color: var(--red-d); background: #FFE1DF; }
+    .badge { display: inline-flex; align-items: center; gap: 6px; padding: 5px 13px; border-radius: 999px; font-size: 12.5px; font-weight: 800; }
+    .badge::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+    .badge.on { background: var(--ok-bg); color: var(--ok); }
+    .badge.off { background: #FFE1DF; color: var(--red-d); }
+
+    /* Leaflet */
+    .leaflet-marker-icon { filter: drop-shadow(0 5px 5px rgba(0,0,0,.3)); }
+    .leaflet-bar { border: 0 !important; border-radius: 14px !important; overflow: hidden; box-shadow: 0 6px 20px rgba(27,31,107,.18) !important; }
+    .leaflet-bar a { color: var(--navy) !important; font-weight: 700; }
+    .leaflet-bar a:hover { background: var(--red-l) !important; color: var(--red-d) !important; }
+    .leaflet-popup-content-wrapper { border-radius: 16px !important; box-shadow: 0 12px 30px rgba(27,31,107,.25) !important; font-family: var(--font); }
+    .leaflet-popup-content { margin: 14px 16px !important; font-size: 13px; line-height: 1.6; color: var(--ink); }
+    .leaflet-popup-content b { color: var(--navy); font-weight: 800; }
+
+    /* Responsive */
+    @media (max-width: 860px) {
+      body { flex-direction: column; }
+      #sidebar { width: 100%; flex-direction: row; align-items: center; padding: 10px 14px; gap: 10px; }
+      .logo { border: 0; padding: 0; margin: 0; }
+      .logo-text small { display: none; }
+      .logo-mark { width: 40px; height: 40px; } .logo-mark img { width: 32px; }
+      .nav-list { display: none; }
+      .user-info { padding: 6px 6px 6px 10px; }
+      #vendorName { max-width: 80px; }
+      #main-content { padding: 16px; gap: 16px; }
+      .header { padding: 20px; min-height: 110px; }
+      .header img { height: 80px; right: 12px; } .header::after { width: 130px; height: 130px; right: -30px; top: -40px; }
+      .h-text { max-width: 62%; } h2 { font-size: 20px; }
+      .map-container { height: 380px; }
+    }
+
+    /* Dialog custom (pengganti alert / confirm / prompt bawaan browser) */
+    .ui-ov { position: fixed; inset: 0; z-index: 10000; display: grid; place-items: center; padding: 20px;
+             background: rgba(15,18,68,.55); backdrop-filter: blur(5px); animation: ovIn .18s ease; }
+    .ui-ov.out { opacity: 0; transition: opacity .15s; }
+    @keyframes ovIn { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes pop { from { transform: scale(.92) translateY(10px); opacity: 0; } to { transform: none; opacity: 1; } }
+    .ui-md { width: min(380px, 100%); background: #fff; border-radius: 26px; padding: 28px 24px 22px; text-align: center;
+             box-shadow: 0 30px 80px rgba(15,18,68,.45); animation: pop .25s cubic-bezier(.2,1.1,.4,1); }
+    .ui-ic { width: 64px; height: 64px; border-radius: 22px; margin: 0 auto 14px; display: grid; place-items: center; }
+    .ui-ic svg { width: 32px; height: 32px; }
+    .ui-ic.ok { background: var(--ok-bg); color: var(--ok); }
+    .ui-ic.warn { background: #FFF3C4; color: #B27B00; }
+    .ui-ic.danger { background: var(--red-l); color: var(--red); }
+    .ui-ic.edit { background: var(--navy-l); color: var(--navy); }
+    .ui-t { margin: 0 0 6px; font-size: 19px; font-weight: 800; color: var(--navy); letter-spacing: -.2px; }
+    .ui-m { margin: 0 0 18px; font-size: 14px; color: var(--mut); line-height: 1.55; }
+    .ui-in { width: 100%; font: 800 22px var(--font); text-align: center; padding: 12px 14px; margin: -4px 0 18px; border: 1.5px solid #E4DAD2; border-radius: 16px;
+             background: var(--cream); color: var(--ink); transition: border-color .15s, box-shadow .15s, background .15s; }
+    .ui-in:focus { outline: 0; border-color: var(--red); background: #fff; box-shadow: 0 0 0 4px rgba(227,30,36,.12); }
+    .ui-ac { display: flex; gap: 10px; }
+    .ui-b { flex: 1; border: 0; cursor: pointer; font: 800 14.5px var(--font); padding: 13px 18px; border-radius: 14px; color: #fff;
+            background: linear-gradient(135deg, var(--red), var(--red-d)); box-shadow: 0 8px 20px rgba(227,30,36,.35); transition: transform .15s; }
+    .ui-b:active { transform: scale(.97); }
+    .ui-b.ghost { background: #F4EEE9; color: var(--ink); box-shadow: none; }
   </style>
 </head>
 <body>
@@ -60,66 +196,91 @@
   <!-- Sidebar Navigasi -->
   <div id="sidebar">
     <div>
-      <div class="logo">☕ Gerobak Penjual</div>
+      <div class="logo">
+        <div class="logo-mark"><img src="gerobak.png" alt=""></div>
+        <div class="logo-text"><b>Sejuta Jiwa</b><small>Abang Gerobak</small></div>
+      </div>
       <ul class="nav-list">
-        <li class="nav-item active"><a href="#">Dashboard Penjual</a></li>
+        <li class="nav-item active"><a href="#">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7.5" height="9" rx="2"/><rect x="13.5" y="3" width="7.5" height="5.5" rx="2"/><rect x="13.5" y="11.5" width="7.5" height="9.5" rx="2"/><rect x="3" y="15.5" width="7.5" height="5.5" rx="2"/></svg>
+          Dashboard Penjual</a></li>
       </ul>
     </div>
     <div class="user-info">
-      <span id="vendorName">Abang</span>
-      <a href="#" id="logoutBtn" style="color:#ef4444; text-decoration:none;">Keluar</a>
+      <span class="u-left">
+        <span class="u-ava"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/></svg></span>
+        <span id="vendorName">Abang</span>
+      </span>
+      <a href="#" id="logoutBtn">Keluar</a>
     </div>
   </div>
 
   <!-- Main Content -->
   <div id="main-content">
     <div class="header">
-      <h2 id="cartTitle">Gerobak Saya</h2>
+      <div class="h-text">
+        <span class="h-eyebrow"><i></i> Dashboard abang</span>
+        <h2 id="cartTitle">Gerobak Saya</h2>
+        <p class="h-sub">Atur status toko, lokasi, dan stok menu jualan kamu.</p>
+      </div>
+      <img src="gerobak.png" alt="">
     </div>
 
     <!-- Ringkasan Stat Cards -->
     <div class="stats-grid">
       <div class="card">
-        <div class="title">Status Toko</div>
-        <div class="value" style="font-size:18px; margin-top:10px;"><span id="statusBadge" class="badge off">Offline</span></div>
+        <div class="s-ic green"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l1.5-5h15L21 9M3 9v11h18V9M3 9c0 1.7 1.3 3 3 3s3-1.3 3-3c0 1.7 1.3 3 3 3s3-1.3 3-3c0 1.7 1.3 3 3 3s3-1.3 3-3"/></svg></div>
+        <div>
+          <div class="title">Status Toko</div>
+          <div class="value" style="margin-top:6px;"><span id="statusBadge" class="badge off">Offline</span></div>
+        </div>
       </div>
       <div class="card">
-        <div class="title">Jumlah Menu di Gerobak</div>
-        <div class="value" id="stMenu">0</div>
+        <div class="s-ic navy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3h10l-1 18H8zM7.5 9h9"/></svg></div>
+        <div>
+          <div class="title">Jumlah Menu di Gerobak</div>
+          <div class="value" id="stMenu">0</div>
+        </div>
       </div>
       <div class="card">
-        <div class="title">Total Stok</div>
-        <div class="value" id="stStock">0</div>
+        <div class="s-ic yellow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8l-9-5-9 5 9 5 9-5zM3 8v8l9 5 9-5V8M12 13v8"/></svg></div>
+        <div>
+          <div class="title">Total Stok</div>
+          <div class="value" id="stStock">0</div>
+        </div>
       </div>
     </div>
 
     <!-- Peta Monitoring + Panel Aksi -->
     <div class="dashboard-body">
       <div class="map-container">
-        <h3 style="margin:0 0 10px;">Peta Lokasi Real-Time</h3>
+        <div class="map-top">
+          <h3>Peta Lokasi Real-Time</h3>
+          <span class="live"><i></i> LIVE</span>
+        </div>
         <div id="vendorMap"></div>
       </div>
 
-      <div style="display: flex; flex-direction: column; gap: 20px;">
+      <div style="display: flex; flex-direction: column; gap: 22px;">
         <!-- Panel Status Toko -->
         <div class="form-box">
           <h3>Status Toko</h3>
-          <p style="font-size:13px; color:#6b7280; margin-top:0;">Buka toko agar gerobak Anda tampil sebagai online di peta pelanggan.</p>
+          <p>Buka toko agar gerobak Anda tampil sebagai online di peta pelanggan.</p>
           <button class="btn" id="toggleStatusBtn" onclick="toggleOnline()">Buka Toko</button>
         </div>
 
         <!-- Panel Bagikan Lokasi -->
         <div class="form-box">
           <h3>Lokasi Gerobak</h3>
-          <p style="font-size:13px; color:#6b7280; margin-top:0;">Bagikan posisi GPS terkini agar pelanggan bisa melihat gerobak Anda bergerak di peta.</p>
-          <div id="locInfo" style="font-size:12px; color:#6b7280; margin-bottom:10px;">Belum membagikan lokasi.</div>
+          <p>Bagikan posisi GPS terkini agar pelanggan bisa melihat gerobak Anda bergerak di peta.</p>
+          <div id="locInfo">Belum membagikan lokasi.</div>
           <button class="btn" id="shareLocBtn" onclick="toggleShareLocation()">Bagikan Lokasi Terkini</button>
         </div>
 
         <!-- Panel Info Katalog -->
-        <div class="form-box">
+        <div class="form-box tip">
           <h3>Pilih Katalog Master</h3>
-          <p style="font-size:13px; color:#6b7280; margin-top:0;">Klik "Tambahkan" pada tabel Katalog Master di bawah untuk memasukkan produk pilihan admin ke menu jualan Anda.</p>
+          <p>Klik "Tambahkan" pada tabel Katalog Master di bawah untuk memasukkan produk pilihan admin ke menu jualan Anda.</p>
         </div>
       </div>
     </div>
@@ -164,6 +325,66 @@
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script>
+    // ---------- UI: dialog custom pengganti alert/confirm/prompt bawaan browser (tombol "Oke") ----------
+    const UI = (() => {
+      const IC = {
+        ok: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>',
+        warn: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 7.5v6"/><path d="M12 17v.01"/><circle cx="12" cy="12" r="9.5"/></svg>',
+        danger: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg>',
+        edit: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8l-9-5-9 5 9 5 9-5zM3 8v8l9 5 9-5V8M12 13v8"/></svg>'
+      };
+      function open(o) {
+        return new Promise(resolve => {
+          const ov = document.createElement('div'); ov.className = 'ui-ov';
+          ov.innerHTML = `<div class="ui-md" role="dialog" aria-modal="true">
+            <div class="ui-ic ${o.tone}">${IC[o.tone]}</div>
+            <h4 class="ui-t"></h4><p class="ui-m"></p>
+            ${o.input ? '<input class="ui-in" type="text" inputmode="numeric" autocomplete="off">' : ''}
+            <div class="ui-ac">${o.cancel ? '<button type="button" class="ui-b ghost" data-r="c"></button>' : ''}<button type="button" class="ui-b" data-r="o"></button></div>
+          </div>`;
+          ov.querySelector('.ui-t').textContent = o.title;
+          ov.querySelector('.ui-m').textContent = o.message;
+          ov.querySelector('[data-r="o"]').textContent = o.ok;
+          if (o.cancel) ov.querySelector('[data-r="c"]').textContent = o.cancel;
+          const inp = ov.querySelector('.ui-in');
+          if (inp) inp.value = o.value == null ? '' : o.value;
+          const prev = document.activeElement;
+          const done = ok => {
+            document.removeEventListener('keydown', key, true);
+            ov.classList.add('out'); setTimeout(() => ov.remove(), 150);
+            if (prev && prev.focus) prev.focus();
+            if (inp) resolve(ok ? inp.value : null);
+            else resolve(o.cancel ? ok : true);
+          };
+          const key = e => {
+            if (e.key === 'Escape') { e.preventDefault(); done(false); }
+            else if (e.key === 'Enter') { e.preventDefault(); done(true); }
+          };
+          ov.addEventListener('click', e => {
+            const b = e.target.closest('[data-r]');
+            if (b) done(b.dataset.r === 'o');
+            else if (e.target === ov && o.cancel) done(false);
+          });
+          document.addEventListener('keydown', key, true);
+          document.body.appendChild(ov);
+          if (inp) { inp.focus(); inp.select(); } else ov.querySelector('[data-r="o"]').focus();
+        });
+      }
+      return {
+        alert(m) {
+          const good = /berhasil|sukses/i.test(m);
+          return open({ tone: good ? 'ok' : 'warn', title: good ? 'Berhasil!' : 'Ups, ada masalah', message: String(m), ok: 'Oke' });
+        },
+        confirm(m) {
+          return open({ tone: 'danger', title: 'Yakin nih?', message: String(m), ok: 'Ya, hapus', cancel: 'Batal' });
+        },
+        prompt(m, def) {
+          return open({ tone: 'edit', title: 'Ubah Stok', message: String(m), input: true, value: def, ok: 'Simpan', cancel: 'Batal' });
+        }
+      };
+    })();
+    window.alert = m => { UI.alert(m); };
+
     const $ = id => document.getElementById(id);
     let token = localStorage.getItem('token'), me = null, myCart = null, carts = [], catalog = [];
     const markers = {};
@@ -175,7 +396,7 @@
         const rMe = await fetch('/api/me', { headers: { Authorization: 'Bearer ' + token } });
         me = await rMe.json();
         if (!rMe.ok || me.role !== 'abang') {
-          alert('Akses ditolak! Khusus Abang Gerobak.');
+          await UI.alert('Akses ditolak! Khusus Abang Gerobak.');
           return logout();
         }
         $('vendorName').textContent = me.username;
@@ -216,12 +437,12 @@
           badge.className = 'badge on';
           badge.textContent = 'Online (Buka)';
           btn.textContent = 'Tutup Toko';
-          btn.style.background = '#ef4444';
+          btn.classList.add('btn-stop');
         } else {
           badge.className = 'badge off';
           badge.textContent = 'Offline (Tutup)';
           btn.textContent = 'Buka Toko';
-          btn.style.background = '#0f7a4d';
+          btn.classList.remove('btn-stop');
         }
 
         renderStats();
@@ -265,16 +486,16 @@
       const tbody = $('vendorMenuBody');
       const menu = myCart.menu || [];
       if (!menu.length) {
-        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#9ca3af;">Belum ada menu dipilih. Silakan pilih dari tabel "Katalog Master Produk" di bawah.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="5" class="empty">Belum ada menu dipilih. Silakan pilih dari tabel "Katalog Master Produk" di bawah.</td></tr>';
         return;
       }
       tbody.innerHTML = menu.map(m => `
         <tr>
-          <td>${m.image ? `<img src="${m.image}" style="width:40px; height:40px; object-fit:cover; border-radius:4px;">` : '<span style="color:#9ca3af; font-size:12px;">No Image</span>'}</td>
+          <td>${m.image ? `<img class="thumb" src="${m.image}" alt="">` : '<span class="noimg">No<br>Image</span>'}</td>
           <td><b>${m.name}</b></td>
-          <td>Rp ${m.price.toLocaleString()}</td>
-          <td><b>${m.stock !== undefined ? m.stock : 0}</b></td>
-          <td>
+          <td><span class="price">Rp ${m.price.toLocaleString()}</span></td>
+          <td><span class="stock ${(m.stock !== undefined ? m.stock : 0) === 0 ? 'zero' : ((m.stock !== undefined ? m.stock : 0) <= 5 ? 'low' : '')}">${m.stock !== undefined ? m.stock : 0}</span></td>
+          <td class="act">
             <button class="btn-sm" onclick="updateStock('${m.id}', ${m.stock !== undefined ? m.stock : 0})">Ubah Stok</button>
             <button class="btn-danger" onclick="deleteMenu('${m.id}')">Hapus</button>
           </td>
@@ -300,18 +521,18 @@
         catalog = await res.json();
         const tbody = $('catalogTableBody');
         if (!catalog.length) {
-          tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:#9ca3af;">Belum ada produk master dari admin</td></tr>';
+          tbody.innerHTML = '<tr><td colspan="4" class="empty">Belum ada produk master dari admin</td></tr>';
           return;
         }
         tbody.innerHTML = catalog.map(p => `
           <tr>
             <td>
-              ${p.image ? `<img src="${p.image}" style="width: 40px; height: 40px; object-fit: cover; border-radius: 4px;" />` : '<span style="color:#9ca3af; font-size:12px;">No Image</span>'}
+              ${p.image ? `<img class="thumb" src="${p.image}" alt="" />` : '<span class="noimg">No<br>Image</span>'}
             </td>
             <td><b>${p.name}</b></td>
-            <td>Rp ${p.price.toLocaleString()}</td>
-            <td>
-              <button class="btn-sm" onclick="addToMyCart('${p.id}')">Tambahkan ke Gerobak</button>
+            <td><span class="price">Rp ${p.price.toLocaleString()}</span></td>
+            <td class="act">
+              <button class="btn-sm btn-add" onclick="addToMyCart('${p.id}')">Tambahkan ke Gerobak</button>
             </td>
           </tr>
         `).join('');
@@ -339,7 +560,7 @@
 
     // Ubah Stok
     async function updateStock(itemId, currentStock) {
-      const input = prompt('Masukkan jumlah stok baru:', currentStock);
+      const input = await UI.prompt('Masukkan jumlah stok baru:', currentStock);
       if (input === null) return;
       const newStock = parseInt(input);
       if (isNaN(newStock) || newStock < 0) return alert('Angka stok tidak valid');
@@ -354,7 +575,7 @@
 
     // Hapus Menu dari Gerobak
     async function deleteMenu(itemId) {
-      if (!confirm('Yakin ingin menghapus menu ini dari gerobak?')) return;
+      if (!await UI.confirm('Yakin ingin menghapus menu ini dari gerobak?')) return;
       await fetch(`/api/carts/${myCart.id}/menu/${itemId}`, {
         method: 'DELETE',
         headers: { Authorization: 'Bearer ' + token }
@@ -379,7 +600,7 @@
 
       const btn = $('shareLocBtn');
       btn.textContent = 'Berhenti Bagikan Lokasi';
-      btn.style.background = '#ef4444';
+      btn.classList.add('btn-stop');
     }
 
     async function sendLocation(pos) {
@@ -407,7 +628,7 @@
       watchId = null;
       const btn = $('shareLocBtn');
       btn.textContent = 'Bagikan Lokasi Terkini';
-      btn.style.background = '#0f7a4d';
+      btn.classList.remove('btn-stop');
       $('locInfo').textContent = 'Belum membagikan lokasi.';
     }
 

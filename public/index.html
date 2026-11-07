@@ -3,60 +3,256 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#E31E24">
 <title>Gerobak Sejuta Jiwa</title>
+<link rel="icon" href="gerobak.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <style>
-  html, body { height: 100%; margin: 0; font: 15px system-ui, sans-serif; color: #1c2a22; }
-  #map { position: absolute; inset: 0; }            /* peta full layar */
-  #bar { position: absolute; top: 10px; left: 10px; right: 10px; z-index: 1000;
-         display: flex; justify-content: space-between; gap: 8px; pointer-events: none; }
-  #bar > * { pointer-events: auto; }
-  .chip { background: #fff; border: 0; border-radius: 999px; padding: 9px 15px;
-          box-shadow: 0 2px 8px #0003; font: inherit; cursor: pointer; }
-  .chip.main { background: #0f7a4d; color: #fff; }
-  #panel { position: absolute; z-index: 1000; background: #fff; padding: 14px; overflow: auto;
-           left: 0; right: 0; bottom: 0; max-height: 55%; border-radius: 16px 16px 0 0;
-           box-shadow: 0 -2px 12px #0004; }
-  #panel:empty { display: none; }
-  @media (min-width: 760px) {
-    #panel { left: auto; right: 10px; top: 60px; bottom: auto; width: 340px;
-             max-height: calc(100% - 80px); border-radius: 14px; box-shadow: 0 2px 12px #0004; }
+  :root {
+    --red: #E31E24; --red-d: #B80F16; --red-l: #FFE9E7;
+    --navy: #1B1F6B; --navy-d: #0F1244; --navy-l: #ECEDFB;
+    --yellow: #FFD400; --cream: #FFF8F1;
+    --ink: #1B1A33; --mut: #6F6C85; --line: #F0E7E0;
+    --ok: #0E9F57; --ok-bg: #DDF6E9;
+    --font: 'Plus Jakarta Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
   }
-  .pin { font-size: 28px; text-align: center; line-height: 30px; }
-  h3 { margin: 0 0 4px; font-size: 17px; }
-  .mut { color: #66746c; font-size: 13px; }
-  .row { display: flex; justify-content: space-between; align-items: center; gap: 8px;
-         padding: 7px 0; border-top: 1px solid #e3e8e4; }
-  .tag { font-size: 12px; padding: 2px 8px; border-radius: 999px; background: #e0f2e9; color: #0f7a4d; }
-  .tag.off { background: #fbe4e1; color: #b8392b; }
-  button.s { border: 1px solid #cdd6d0; background: #fff; border-radius: 8px; padding: 5px 10px; cursor: pointer; font: inherit; font-size: 13px; }
-  button.s.p { background: #0f7a4d; color: #fff; border-color: #0f7a4d; }
-  input { font: inherit; padding: 7px 9px; border: 1px solid #cdd6d0; border-radius: 8px; width: 100%; box-sizing: border-box; margin: 3px 0; }
-  dialog { border: 0; border-radius: 14px; padding: 18px; width: min(320px, 90vw); }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; margin: 0; font: 15px/1.5 var(--font); color: var(--ink); background: var(--cream); }
+  #map { position: absolute; inset: 0; }            /* peta full layar */
+
+  /* ---------- Top bar ---------- */
+  #bar { position: absolute; top: 12px; left: 12px; right: 12px; z-index: 1000;
+         display: flex; justify-content: space-between; align-items: center; gap: 8px; pointer-events: none; }
+  #bar > * { pointer-events: auto; }
+  .brand { display: flex; align-items: center; gap: 10px; background: #fff; padding: 6px 16px 6px 6px;
+           border-radius: 999px; box-shadow: 0 6px 20px rgba(27,31,107,.18); min-width: 0; }
+  .brand-logo { width: 42px; height: 42px; border-radius: 50%; flex: none; display: grid; place-items: center;
+                background: linear-gradient(135deg, var(--red), var(--red-d)); overflow: hidden; }
+  .brand-logo img { width: 36px; height: auto; filter: drop-shadow(0 2px 2px rgba(0,0,0,.25)); }
+  .brand-text { display: flex; flex-direction: column; line-height: 1.15; min-width: 0; }
+  .brand-text b { font-size: 15px; font-weight: 800; color: var(--navy); letter-spacing: -.2px; white-space: nowrap; }
+  .brand-text small { font-size: 11px; color: var(--mut); font-weight: 500; white-space: nowrap; }
+  .actions { display: flex; gap: 8px; align-items: center; }
+  .chip { display: inline-flex; align-items: center; gap: 7px; background: #fff; color: var(--navy); border: 0;
+          border-radius: 999px; padding: 11px 16px; font: 700 13.5px var(--font); cursor: pointer;
+          box-shadow: 0 6px 20px rgba(27,31,107,.18); transition: transform .15s, box-shadow .15s, background .15s; }
+  .chip svg { width: 17px; height: 17px; flex: none; }
+  .chip:hover { transform: translateY(-1px); box-shadow: 0 10px 24px rgba(27,31,107,.25); }
+  .chip:active { transform: scale(.97); }
+  .chip.main { background: linear-gradient(135deg, var(--red), var(--red-d)); color: #fff;
+               box-shadow: 0 8px 22px rgba(227,30,36,.4); max-width: 190px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .chip.main:hover { box-shadow: 0 12px 26px rgba(227,30,36,.5); }
+
+  /* ---------- Panel menu gerobak ---------- */
+  #panel { position: absolute; z-index: 1000; background: #fff; padding: 10px 18px 18px; overflow: auto;
+           left: 0; right: 0; bottom: 0; max-height: 58%; border-radius: 26px 26px 0 0;
+           box-shadow: 0 -10px 40px rgba(27,31,107,.22); animation: sheetUp .3s cubic-bezier(.2,.9,.3,1); }
+  #panel::before { content: ""; display: block; width: 44px; height: 5px; border-radius: 99px; background: #E6DDD6; margin: 0 auto 12px; }
+  #panel:empty { display: none; }
+  #panel::-webkit-scrollbar { width: 6px; }
+  #panel::-webkit-scrollbar-thumb { background: #E6DDD6; border-radius: 99px; }
+  @keyframes sheetUp { from { transform: translateY(40px); opacity: 0; } to { transform: none; opacity: 1; } }
+  @media (min-width: 760px) {
+    #panel { left: auto; right: 14px; top: 78px; bottom: auto; width: 370px; max-height: calc(100% - 100px);
+             border-radius: 24px; padding: 18px; box-shadow: 0 16px 48px rgba(27,31,107,.25); }
+    #panel::before { display: none; }
+  }
+
+  .c-head { display: flex; gap: 12px; align-items: center; padding: 14px; margin: 0 0 14px; border-radius: 18px; color: #fff;
+            background: radial-gradient(circle at 1px 1px, rgba(255,255,255,.16) 1.4px, transparent 0) 0 0 / 12px 12px,
+                        linear-gradient(135deg, var(--red), var(--red-d)); }
+  .c-ava { width: 50px; height: 50px; border-radius: 14px; background: #fff; flex: none; display: grid; place-items: center; }
+  .c-ava img { width: 42px; height: auto; }
+  .c-info { min-width: 0; flex: 1; }
+  h3 { margin: 0; font-size: 17px; font-weight: 800; letter-spacing: -.2px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .c-head .mut { color: rgba(255,255,255,.85); margin-top: 2px; }
+  .mut { color: var(--mut); font-size: 12.5px; }
+  .sec-title { display: flex; align-items: center; justify-content: space-between; margin: 0 2px 8px; font-weight: 800; font-size: 14px; color: var(--navy); }
+  .sec-title::after { content: ""; flex: 1; height: 2px; margin-left: 12px; border-radius: 9px;
+                      background: repeating-linear-gradient(90deg, var(--line) 0 6px, transparent 6px 12px); }
+
+  .tag { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 800; padding: 3px 9px; border-radius: 999px;
+         background: var(--ok-bg); color: var(--ok); letter-spacing: .2px; }
+  .tag::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+  .tag.off { background: #FFE1DF; color: var(--red-d); }
+
+  .row { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 10px; margin-bottom: 8px;
+         background: var(--cream); border: 1px solid var(--line); border-radius: 16px; transition: transform .15s, box-shadow .15s; }
+  .row:hover { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(27,31,107,.08); }
+  .m-left { display: flex; align-items: center; gap: 12px; min-width: 0; }
+  .m-img { width: 52px; height: 52px; border-radius: 14px; object-fit: cover; flex: none; background: #fff; box-shadow: 0 2px 8px rgba(0,0,0,.1); }
+  .m-img.ph { display: grid; place-items: center; font-size: 22px; background: var(--red-l); box-shadow: none; }
+  .m-name { font-weight: 700; font-size: 14px; line-height: 1.3; color: var(--ink); }
+  .m-price { flex: none; font-weight: 800; font-size: 13px; color: var(--red-d); background: var(--red-l); padding: 6px 11px; border-radius: 999px; }
+  .empty { text-align: center; padding: 22px 12px; border-radius: 16px; background: var(--cream); border: 2px dashed var(--line); }
+  .empty .em { font-size: 30px; display: block; margin-bottom: 4px; }
+
+  /* ---------- Hint ---------- */
+  #hint { position: absolute; z-index: 900; left: 50%; bottom: 22px; transform: translateX(-50%); white-space: nowrap;
+          background: var(--navy); color: #fff; font-weight: 600; font-size: 13px; padding: 10px 18px; border-radius: 999px;
+          box-shadow: 0 10px 26px rgba(15,18,68,.35); display: flex; align-items: center; gap: 8px; pointer-events: none; animation: bob 2.4s ease-in-out infinite; }
+  #hint i { width: 8px; height: 8px; border-radius: 50%; background: var(--yellow); box-shadow: 0 0 0 4px rgba(255,212,0,.3); }
+  #panel:not(:empty) ~ #hint { display: none; }
+  @keyframes bob { 0%,100% { transform: translate(-50%, 0); } 50% { transform: translate(-50%, -4px); } }
+
+  /* ---------- Tombol & input ---------- */
+  button.s { border: 1.5px solid #E4DAD2; background: #fff; color: var(--ink); border-radius: 14px; padding: 12px 18px;
+             cursor: pointer; font: 700 14px var(--font); transition: transform .15s, box-shadow .15s, background .15s; }
+  button.s:hover { background: var(--cream); }
+  button.s:active { transform: scale(.97); }
+  button.s.p { background: linear-gradient(135deg, var(--red), var(--red-d)); color: #fff; border-color: transparent; box-shadow: 0 8px 20px rgba(227,30,36,.35); }
+  button.s.p:hover { box-shadow: 0 12px 26px rgba(227,30,36,.45); transform: translateY(-1px); }
+  .fld { display: block; margin-bottom: 12px; }
+  .fld > span { display: block; font-size: 12px; font-weight: 700; color: var(--navy); margin-bottom: 5px; }
+  input { font: 500 14.5px var(--font); padding: 12px 14px; border: 1.5px solid #E4DAD2; border-radius: 14px; width: 100%;
+          background: var(--cream); color: var(--ink); transition: border-color .15s, box-shadow .15s, background .15s; }
+  input::placeholder { color: #B2ACBF; }
+  input:focus { outline: 0; border-color: var(--red); background: #fff; box-shadow: 0 0 0 4px rgba(227,30,36,.12); }
+
+  /* ---------- Dialog login ---------- */
+  dialog { border: 0; border-radius: 26px; padding: 0; width: min(380px, 92vw); overflow: hidden; color: var(--ink);
+           box-shadow: 0 30px 80px rgba(15,18,68,.45); font-family: var(--font); }
+  dialog[open] { animation: pop .25s cubic-bezier(.2,1.1,.4,1); }
+  dialog::backdrop { background: rgba(15,18,68,.55); backdrop-filter: blur(5px); }
+  @keyframes pop { from { transform: scale(.92) translateY(10px); opacity: 0; } to { transform: none; opacity: 1; } }
+  .dlg-hero { display: flex; align-items: center; gap: 14px; padding: 22px 22px 20px; color: #fff;
+              background: radial-gradient(circle at 1px 1px, rgba(255,255,255,.16) 1.4px, transparent 0) 0 0 / 12px 12px,
+                          linear-gradient(135deg, var(--red), var(--red-d)); }
+  .dlg-hero .c-ava { width: 56px; height: 56px; border-radius: 16px; }
+  .dlg-hero .c-ava img { width: 46px; }
+  .dlg-hero h3 { font-size: 22px; }
+  .dlg-hero p { margin: 2px 0 0; font-size: 12.5px; color: rgba(255,255,255,.88); }
+  .dlg-body { padding: 20px 22px 22px; }
+  .err { color: var(--red-d); font-size: 13px; font-weight: 600; margin: 0; min-height: 0; }
+  .err:not(:empty) { background: var(--red-l); padding: 9px 12px; border-radius: 12px; margin-bottom: 12px; }
+  .dlg-actions { display: flex; gap: 10px; margin-top: 4px; }
+  .dlg-actions button { flex: 1; }
+
+  /* ---------- Marker & kontrol Leaflet ---------- */
+  .leaflet-marker-icon { filter: drop-shadow(0 6px 6px rgba(0,0,0,.3)); }
+  .leaflet-top.leaflet-left { top: 74px; }
+  .leaflet-left .leaflet-control { margin-left: 12px; }
+  .leaflet-bar { border: 0 !important; border-radius: 14px !important; overflow: hidden; box-shadow: 0 6px 20px rgba(27,31,107,.18) !important; }
+  .leaflet-bar a { width: 36px !important; height: 36px !important; line-height: 36px !important; color: var(--navy) !important; font-weight: 700; }
+  .leaflet-bar a:hover { background: var(--red-l) !important; color: var(--red-d) !important; }
+  .leaflet-control-attribution { font-size: 10px !important; border-radius: 10px 0 0 0; }
+
+  /* ---------- Dialog custom (pengganti alert bawaan browser) ---------- */
+  .ui-ov { position: fixed; inset: 0; z-index: 10000; display: grid; place-items: center; padding: 20px;
+           background: rgba(15,18,68,.55); backdrop-filter: blur(5px); animation: ovIn .18s ease; }
+  .ui-ov.out { opacity: 0; transition: opacity .15s; }
+  @keyframes ovIn { from { opacity: 0; } to { opacity: 1; } }
+  .ui-md { width: min(380px, 100%); background: #fff; border-radius: 26px; padding: 28px 24px 22px; text-align: center;
+           box-shadow: 0 30px 80px rgba(15,18,68,.45); animation: pop .25s cubic-bezier(.2,1.1,.4,1); font-family: var(--font); }
+  .ui-ic { width: 64px; height: 64px; border-radius: 22px; margin: 0 auto 14px; display: grid; place-items: center; }
+  .ui-ic svg { width: 32px; height: 32px; }
+  .ui-ic.ok { background: var(--ok-bg); color: var(--ok); }
+  .ui-ic.warn { background: #FFF3C4; color: #B27B00; }
+  .ui-ic.danger { background: var(--red-l); color: var(--red); }
+  .ui-t { margin: 0 0 6px; font-size: 19px; font-weight: 800; color: var(--navy); letter-spacing: -.2px; }
+  .ui-m { margin: 0 0 18px; font-size: 14px; color: var(--mut); line-height: 1.55; }
+  .ui-ac { display: flex; gap: 10px; }
+  .ui-b { flex: 1; border: 0; cursor: pointer; font: 800 14.5px var(--font); padding: 13px 18px; border-radius: 14px; color: #fff;
+          background: linear-gradient(135deg, var(--red), var(--red-d)); box-shadow: 0 8px 20px rgba(227,30,36,.35); transition: transform .15s; }
+  .ui-b:active { transform: scale(.97); }
+  .ui-b.ghost { background: #F4EEE9; color: var(--ink); box-shadow: none; }
 </style>
 </head>
 <body>
 <div id="map"></div>
 <div id="bar">
-  <button class="chip" id="near">📍 Dekat saya</button>
-  <button class="chip main" id="auth">Masuk</button>
+  <div class="brand">
+    <span class="brand-logo"><img src="gerobak.png" alt=""></span>
+    <span class="brand-text"><b>Sejuta Jiwa</b><small>Cari gerobak terdekat</small></span>
+  </div>
+  <div class="actions">
+    <button class="chip" id="near">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/><circle cx="12" cy="12" r="7.5"/></svg>
+      <span>Dekat saya</span>
+    </button>
+    <button class="chip main" id="auth">Masuk</button>
+  </div>
 </div>
 <div id="panel"></div>
+<div id="hint"><i></i>Ketuk gerobak di peta untuk lihat menu</div>
 
 <dialog id="dlg">
   <form id="loginForm">
-    <h3>Masuk</h3>
-    <p class="mut">Khusus untuk abang gerobak dan admin.</p>
-    <input id="lu" placeholder="Username" autocomplete="username" required>
-    <input id="lp" type="password" placeholder="Password" autocomplete="current-password" required>
-    <p id="lerr" class="mut" style="color:#b8392b"></p> 
-    <button class="s p" type="submit">Masuk</button>
-    <button class="s" type="button" onclick="dlg.close()">Batal</button>
+    <div class="dlg-hero">
+      <div class="c-ava"><img src="gerobak.png" alt=""></div>
+      <div>
+        <h3>Masuk</h3>
+        <p>Khusus untuk abang gerobak dan admin.</p>
+      </div>
+    </div>
+    <div class="dlg-body">
+      <label class="fld"><span>Username</span>
+        <input id="lu" placeholder="Masukkan username" autocomplete="username" required></label>
+      <label class="fld"><span>Password</span>
+        <input id="lp" type="password" placeholder="Masukkan password" autocomplete="current-password" required></label>
+      <p id="lerr" class="err"></p>
+      <div class="dlg-actions">
+        <button class="s" type="button" onclick="dlg.close()">Batal</button>
+        <button class="s p" type="submit">Masuk</button>
+      </div>
+    </div>
   </form>
 </dialog>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
+// ---------- UI: dialog custom pengganti alert bawaan browser (tombol "Oke") ----------
+const UI = (() => {
+  const IC = {
+    ok: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>',
+    warn: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 7.5v6"/><path d="M12 17v.01"/><circle cx="12" cy="12" r="9.5"/></svg>',
+    danger: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg>'
+  };
+  function open(o) {
+    return new Promise(resolve => {
+      const ov = document.createElement('div'); ov.className = 'ui-ov';
+      ov.innerHTML = `<div class="ui-md" role="dialog" aria-modal="true">
+        <div class="ui-ic ${o.tone}">${IC[o.tone]}</div>
+        <h4 class="ui-t"></h4><p class="ui-m"></p>
+        <div class="ui-ac">${o.cancel ? '<button type="button" class="ui-b ghost" data-r="c"></button>' : ''}<button type="button" class="ui-b" data-r="o"></button></div>
+      </div>`;
+      ov.querySelector('.ui-t').textContent = o.title;
+      ov.querySelector('.ui-m').textContent = o.message;
+      ov.querySelector('[data-r="o"]').textContent = o.ok;
+      if (o.cancel) ov.querySelector('[data-r="c"]').textContent = o.cancel;
+      const prev = document.activeElement;
+      const done = v => {
+        document.removeEventListener('keydown', key, true);
+        ov.classList.add('out'); setTimeout(() => ov.remove(), 150);
+        if (prev && prev.focus) prev.focus();
+        resolve(v);
+      };
+      const key = e => {
+        if (e.key === 'Escape') { e.preventDefault(); done(o.cancel ? false : true); }
+        else if (e.key === 'Enter') { e.preventDefault(); done(true); }
+      };
+      ov.addEventListener('click', e => {
+        const b = e.target.closest('[data-r]');
+        if (b) done(b.dataset.r === 'o');
+        else if (e.target === ov && o.cancel) done(false);
+      });
+      document.addEventListener('keydown', key, true);
+      document.body.appendChild(ov);
+      ov.querySelector('[data-r="o"]').focus();
+    });
+  }
+  return {
+    alert(m) {
+      const good = /berhasil|sukses/i.test(m);
+      return open({ tone: good ? 'ok' : 'warn', title: good ? 'Berhasil!' : 'Ups, ada masalah', message: String(m), ok: 'Oke' });
+    }
+  };
+})();
+window.alert = m => { UI.alert(m); };
+
 const $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const rp = n => 'Rp' + Number(n).toLocaleString('id-ID');
@@ -121,21 +317,26 @@ function render(force) {
 function detail(c) {
   // Customer hanya melihat menu yang available (tersedia)
   const items = (c.menu || []).filter(m => m.available);
-  let h = `<h3>${esc(c.name)} <span class="tag">${c.online ? 'Buka' : 'Tutup'}</span></h3>
-    <div class="mut">Abang: ${esc(c.abang)} · update ${new Date(c.updated).toLocaleTimeString('id-ID')}</div>
-    <div style="margin-top:8px"><b>Menu tersedia</b></div>`;
+  let h = `<div class="c-head">
+      <div class="c-ava"><img src="gerobak.png" alt=""></div>
+      <div class="c-info">
+        <h3>${esc(c.name)} <span class="tag ${c.online ? '' : 'off'}">${c.online ? 'Buka' : 'Tutup'}</span></h3>
+        <div class="mut">Abang: ${esc(c.abang)} · update ${new Date(c.updated).toLocaleTimeString('id-ID')}</div>
+      </div>
+    </div>
+    <div class="sec-title">Menu tersedia</div>`;
   
   if (!items.length) {
-    h += `<p class="mut">Belum ada menu yang tersedia di gerobak ini.</p>`;
+    h += `<div class="empty"><span class="em">☕</span><span class="mut">Belum ada menu yang tersedia di gerobak ini.</span></div>`;
   } else {
     items.forEach(m => {
-      const imgTag = m.image ? `<img src="${m.image}" style="width:36px; height:36px; object-fit:cover; border-radius:4px; margin-right:8px; vertical-align:middle;">` : '';
+      const imgTag = m.image ? `<img class="m-img" src="${m.image}" alt="">` : `<span class="m-img ph">☕</span>`;
       h += `<div class="row">
-        <span style="display:flex; align-items:center;">
+        <span class="m-left">
           ${imgTag}
-          <span>${esc(m.name)}<br><span class="mut">${rp(m.price)}</span></span>
+          <span class="m-name">${esc(m.name)}</span>
         </span>
-        <b>${rp(m.price)}</b>
+        <span class="m-price">${rp(m.price)}</span>
       </div>`;
     });
   }
@@ -149,7 +350,7 @@ $('near').onclick = () => {
   navigator.geolocation.getCurrentPosition(pos => {
     const ll = [pos.coords.latitude, pos.coords.longitude];
     if (meMarker) map.removeLayer(meMarker);
-    meMarker = L.circleMarker(ll, { radius: 8, color: '#1a73e8', fillOpacity: .9 }).addTo(map);
+    meMarker = L.circleMarker(ll, { radius: 8, color: '#1B1F6B', fillColor: '#FFD400', fillOpacity: .95, weight: 3 }).addTo(map);
     map.setView(ll, 16);
   }, () => alert('Lokasi tidak bisa diakses. Cek izin lokasi di browser.'));
 };
