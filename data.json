@@ -39,11 +39,21 @@
       "id": "f48a45ac7dcd",
       "name": "3",
       "abang": "paw",
-      "lat": -6.257744687589566,
-      "lng": 107.006460000673,
+      "lat": -6.297905900209258,
+      "lng": 106.97152778943236,
       "online": true,
-      "updated": 1793768014210,
-      "menu": []
+      "updated": 1794065774164,
+      "menu": [
+        {
+          "id": "d55dd5481cb5",
+          "productId": "e6df2b5b7a17",
+          "name": "americano ice",
+          "price": 15000,
+          "image": "/catalog/imagesmenu/1793902957310-554987813.jpg",
+          "available": true,
+          "stock": 10
+        }
+      ]
     },
     {
       "id": "07e67039f6d6",

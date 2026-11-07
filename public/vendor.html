@@ -3,41 +3,53 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Panel Penjual - Gerobak Sejuta Jiwa</title>
+  <title>Dashboard Penjual - Gerobak Sejuta Jiwa</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
   <style>
     * { box-sizing: border-box; }
     body { margin: 0; font-family: system-ui, -apple-system, sans-serif; background: #f4f6f8; color: #1c2a22; display: flex; height: 100vh; overflow: hidden; }
 
-    /* Sidebar */
+    /* Sidebar Navigation */
     #sidebar { width: 250px; background: #111827; color: #fff; display: flex; flex-direction: column; justify-content: space-between; padding: 20px 0; }
     .logo { font-size: 18px; font-weight: bold; padding: 0 20px 20px; border-bottom: 1px solid #1f2937; color: #10b981; }
     .nav-list { list-style: none; padding: 10px 0; margin: 0; }
-    .nav-item a { display: block; padding: 12px 20px; color: #9ca3af; text-decoration: none; font-size: 14px; font-weight: 500; cursor: pointer; }
+    .nav-item a { display: block; padding: 12px 20px; color: #9ca3af; text-decoration: none; font-size: 14px; font-weight: 500; }
     .nav-item.active a, .nav-item a:hover { background: #1f2937; color: #10b981; }
     .user-info { padding: 15px 20px; border-top: 1px solid #1f2937; font-size: 13px; color: #9ca3af; display: flex; justify-content: space-between; align-items: center; }
 
-    /* Main Content */
+    /* Main Content Area */
     #main-content { flex: 1; overflow-y: auto; padding: 24px; display: flex; flex-direction: column; gap: 20px; }
     .header { display: flex; justify-content: space-between; align-items: center; }
     h2 { margin: 0; font-size: 22px; }
 
-    .card { background: #fff; padding: 18px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); margin-bottom: 20px; }
+    /* Stat Cards */
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; }
+    .card { background: #fff; padding: 18px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+    .card .title { font-size: 13px; color: #6b7280; font-weight: 500; }
+    .card .value { font-size: 26px; font-weight: bold; margin-top: 6px; color: #0f7a4d; }
+
+    /* Layout Dashboard (Map + Panel) */
+    .dashboard-body { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; }
+    @media (max-width: 900px) { .dashboard-body { grid-template-columns: 1fr; } }
+
+    /* Map Box */
+    .map-container { background: #fff; border-radius: 12px; padding: 14px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); height: 420px; display: flex; flex-direction: column; }
+    #vendorMap { flex: 1; border-radius: 8px; z-index: 1; }
+
+    /* Action Boxes & Tables */
+    .form-box { background: #fff; padding: 18px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+    .form-box h3 { margin-top: 0; font-size: 16px; }
+    button.btn { background: #0f7a4d; color: #fff; border: none; padding: 10px 16px; border-radius: 8px; font-weight: 600; cursor: pointer; width: 100%; }
+    button.btn:hover { background: #0b5e3a; }
+    button.btn-sm { background: #0f7a4d; color: #fff; border: none; padding: 5px 10px; border-radius: 6px; cursor: pointer; font-size: 12px; margin-right: 5px; }
+    button.btn-sm:hover { background: #0b5e3a; }
+    button.btn-danger { background: #ef4444; color: white; border: none; padding: 5px 10px; border-radius: 6px; cursor: pointer; }
+
+    /* Data Table */
     .table-container { background: #fff; border-radius: 12px; padding: 18px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
     table { width: 100%; border-collapse: collapse; font-size: 14px; }
     th, td { text-align: left; padding: 12px 14px; border-bottom: 1px solid #e5e7eb; }
     th { color: #6b7280; font-weight: 600; background: #f9fafb; }
-    
-    .btn { background: #0f7a4d; color: #fff; border: none; padding: 8px 14px; border-radius: 6px; font-weight: 600; cursor: pointer; }
-    .btn:hover { background: #0b5e3a; }
-    .btn-danger { background: #ef4444; color: white; border: none; padding: 6px 10px; border-radius: 6px; cursor: pointer; }
-    
-    /* Catalog Grid */
-    .catalog-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; }
-    .catalog-card { background: #fff; border: 1px solid #e5e7eb; border-radius: 10px; padding: 12px; display: flex; flex-direction: column; gap: 8px; }
-    .catalog-card img { width: 100%; height: 120px; object-fit: cover; border-radius: 6px; background: #f3f4f6; }
-
-    .view-section { display: none; }
-    .view-section.active { display: block; }
     .badge { padding: 3px 8px; border-radius: 999px; font-size: 12px; font-weight: 600; }
     .badge.on { background: #d1fae5; color: #065f46; }
     .badge.off { background: #fee2e2; color: #991b1b; }
@@ -45,13 +57,12 @@
 </head>
 <body>
 
-  <!-- Sidebar -->
+  <!-- Sidebar Navigasi -->
   <div id="sidebar">
     <div>
-      <div class="logo">☕ Panel Penjual</div>
+      <div class="logo">☕ Gerobak Penjual</div>
       <ul class="nav-list">
-        <li class="nav-item active" id="navDashboard" onclick="switchView('dashboard')"><a href="#">Dashboard & Menu</a></li>
-        <li class="nav-item" id="navCatalog" onclick="switchView('catalog')"><a href="#">Pilih Katalog Master</a></li>
+        <li class="nav-item active"><a href="#">Dashboard Penjual</a></li>
       </ul>
     </div>
     <div class="user-info">
@@ -62,53 +73,102 @@
 
   <!-- Main Content -->
   <div id="main-content">
-    
-    <!-- VIEW 1: DASHBOARD & MENU GEROBAK -->
-    <div id="viewDashboard" class="view-section active">
-      <div class="header">
-        <h2 id="cartTitle">Gerobak Saya</h2>
-        <div>
-          Status Toko: <span id="statusBadge" class="badge off">Offline</span>
-          <button class="btn" id="toggleStatusBtn" onclick="toggleOnline()" style="margin-left: 10px;">Buka Toko</button>
+    <div class="header">
+      <h2 id="cartTitle">Gerobak Saya</h2>
+    </div>
+
+    <!-- Ringkasan Stat Cards -->
+    <div class="stats-grid">
+      <div class="card">
+        <div class="title">Status Toko</div>
+        <div class="value" style="font-size:18px; margin-top:10px;"><span id="statusBadge" class="badge off">Offline</span></div>
+      </div>
+      <div class="card">
+        <div class="title">Jumlah Menu di Gerobak</div>
+        <div class="value" id="stMenu">0</div>
+      </div>
+      <div class="card">
+        <div class="title">Total Stok</div>
+        <div class="value" id="stStock">0</div>
+      </div>
+    </div>
+
+    <!-- Peta Monitoring + Panel Aksi -->
+    <div class="dashboard-body">
+      <div class="map-container">
+        <h3 style="margin:0 0 10px;">Peta Lokasi Real-Time</h3>
+        <div id="vendorMap"></div>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 20px;">
+        <!-- Panel Status Toko -->
+        <div class="form-box">
+          <h3>Status Toko</h3>
+          <p style="font-size:13px; color:#6b7280; margin-top:0;">Buka toko agar gerobak Anda tampil sebagai online di peta pelanggan.</p>
+          <button class="btn" id="toggleStatusBtn" onclick="toggleOnline()">Buka Toko</button>
+        </div>
+
+        <!-- Panel Bagikan Lokasi -->
+        <div class="form-box">
+          <h3>Lokasi Gerobak</h3>
+          <p style="font-size:13px; color:#6b7280; margin-top:0;">Bagikan posisi GPS terkini agar pelanggan bisa melihat gerobak Anda bergerak di peta.</p>
+          <div id="locInfo" style="font-size:12px; color:#6b7280; margin-bottom:10px;">Belum membagikan lokasi.</div>
+          <button class="btn" id="shareLocBtn" onclick="toggleShareLocation()">Bagikan Lokasi Terkini</button>
+        </div>
+
+        <!-- Panel Info Katalog -->
+        <div class="form-box">
+          <h3>Pilih Katalog Master</h3>
+          <p style="font-size:13px; color:#6b7280; margin-top:0;">Klik "Tambahkan" pada tabel Katalog Master di bawah untuk memasukkan produk pilihan admin ke menu jualan Anda.</p>
         </div>
       </div>
-
-      <div class="table-container" style="margin-top: 20px;">
-        <h3>Daftar Menu di Gerobak Anda</h3>
-        <table>
-          <thead>
-            <tr>
-              <th>Gambar</th>
-              <th>Nama Produk</th>
-              <th>Harga</th>
-              <th>Stok</th>
-              <th>Aksi</th>
-            </tr>
-          </thead>
-          <tbody id="vendorMenuBody">
-            <!-- Diisi JavaScript -->
-          </tbody>
-        </table>
-      </div>
     </div>
 
-    <!-- VIEW 2: PILIH KATALOG MASTER -->
-    <div id="viewCatalog" class="view-section">
-      <div class="header">
-        <h2>Pilih Produk dari Katalog Master</h2>
-      </div>
-      <p style="color: #6b7280; font-size: 14px;">Klik "Tambahkan ke Gerobak" untuk memasukkan produk pilihan admin ke menu jualan Anda.</p>
-      <div class="catalog-grid" id="catalogGrid">
-        <!-- Diisi JavaScript -->
-      </div>
+    <!-- Tabel Menu Gerobak -->
+    <div class="table-container">
+      <h3>Daftar Menu di Gerobak Anda</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Gambar</th>
+            <th>Nama Produk</th>
+            <th>Harga</th>
+            <th>Stok</th>
+            <th>Aksi</th>
+          </tr>
+        </thead>
+        <tbody id="vendorMenuBody">
+          <!-- Diisi otomatis dari JavaScript -->
+        </tbody>
+      </table>
     </div>
 
+    <!-- Tabel Katalog Master -->
+    <div class="table-container">
+      <h3>Katalog Master Produk</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Gambar</th>
+            <th>Nama Produk</th>
+            <th>Harga</th>
+            <th>Aksi</th>
+          </tr>
+        </thead>
+        <tbody id="catalogTableBody">
+          <!-- Diisi otomatis dari JavaScript -->
+        </tbody>
+      </table>
+    </div>
   </div>
 
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script>
     const $ = id => document.getElementById(id);
-    let token = localStorage.getItem('token'), me = null, myCart = null, catalog = [];
+    let token = localStorage.getItem('token'), me = null, myCart = null, carts = [], catalog = [];
+    const markers = {};
 
+    // 1. Verifikasi Akses Abang
     async function initVendor() {
       if (!token) return logout();
       try {
@@ -121,55 +181,83 @@
         $('vendorName').textContent = me.username;
         await loadCartData();
         await loadMasterCatalog();
+        setInterval(loadCartData, 5000); // Auto update peta & status tiap 5 detik
       } catch (err) {
         logout();
       }
     }
 
+    // Logout Helper
     function logout() {
       localStorage.removeItem('token');
       window.location.href = '/';
     }
     $('logoutBtn').onclick = logout;
 
-    // Switch View Tab
-    function switchView(view) {
-      if (view === 'dashboard') {
-        $('navDashboard').classList.add('active');
-        $('navCatalog').classList.remove('active');
-        $('viewDashboard').classList.add('active');
-        $('viewCatalog').classList.remove('active');
-      } else {
-        $('navCatalog').classList.add('active');
-        $('navDashboard').classList.remove('active');
-        $('viewCatalog').classList.add('active');
-        $('viewDashboard').classList.remove('active');
+    // 2. Inisialisasi Peta Leaflet (posisi & zoom sama seperti admin)
+    const map = L.map('vendorMap').setView([-6.2088, 106.8456], 12);
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19, attribution: '&copy; OpenStreetMap'
+    }).addTo(map);
+    const ICON = L.icon({ iconUrl: 'gerobak.png', iconSize: [40, 27], iconAnchor: [20, 27] });
+
+    // 3. Ambil Data Gerobak
+    async function loadCartData() {
+      try {
+        const res = await fetch('/api/carts');
+        carts = await res.json();
+        myCart = carts.find(c => c.id === me.cartId);
+        if (!myCart) return;
+
+        $('cartTitle').textContent = myCart.name;
+        const badge = $('statusBadge');
+        const btn = $('toggleStatusBtn');
+        if (myCart.online) {
+          badge.className = 'badge on';
+          badge.textContent = 'Online (Buka)';
+          btn.textContent = 'Tutup Toko';
+          btn.style.background = '#ef4444';
+        } else {
+          badge.className = 'badge off';
+          badge.textContent = 'Offline (Tutup)';
+          btn.textContent = 'Buka Toko';
+          btn.style.background = '#0f7a4d';
+        }
+
+        renderStats();
+        renderMap();
+        renderVendorMenu();
+      } catch (e) {
+        console.error('Gagal memperbarui data', e);
       }
     }
 
-    // Ambil Data Gerobak Sendiri
-    async function loadCartData() {
-      const res = await fetch('/api/carts');
-      const carts = await res.json();
-      myCart = carts.find(c => c.id === me.cartId);
-      if (!myCart) return;
+    // Render Stats Kartu
+    function renderStats() {
+      const menu = myCart.menu || [];
+      $('stMenu').textContent = menu.length;
+      $('stStock').textContent = menu.reduce((sum, m) => sum + (m.stock !== undefined ? m.stock : 0), 0);
+    }
 
-      $('cartTitle').textContent = myCart.name;
-      const badge = $('statusBadge');
-      const btn = $('toggleStatusBtn');
-      if (myCart.online) {
-        badge.className = 'badge on';
-        badge.textContent = 'Online (Buka)';
-        btn.textContent = 'Tutup Toko';
-        btn.style.background = '#ef4444';
-      } else {
-        badge.className = 'badge off';
-        badge.textContent = 'Offline (Tutup)';
-        btn.textContent = 'Buka Toko';
-        btn.style.background = '#0f7a4d';
-      }
-
-      renderVendorMenu();
+    // Render Marker Peta
+    function renderMap() {
+      const seen = new Set();
+      carts.forEach(c => {
+        seen.add(c.id);
+        const mine = c.id === myCart.id;
+        let m = markers[c.id];
+        if (!m) {
+          m = markers[c.id] = L.marker([c.lat, c.lng], { icon: ICON }).addTo(map)
+            .bindPopup(`<b>${c.name}</b>${mine ? ' (Gerobak Anda)' : ''}<br>Abang: ${c.abang}<br>Status: ${c.online ? 'Buka' : 'Tutup'}`);
+        } else {
+          m.setLatLng([c.lat, c.lng]);
+          m.setPopupContent(`<b>${c.name}</b>${mine ? ' (Gerobak Anda)' : ''}<br>Abang: ${c.abang}<br>Status: ${c.online ? 'Buka' : 'Tutup'}`);
+        }
+        m.setOpacity(c.online ? 1 : 0.4);
+      });
+      Object.keys(markers).forEach(id => {
+        if (!seen.has(id)) { map.removeLayer(markers[id]); delete markers[id]; }
+      });
     }
 
     // Render Menu di Gerobak Sendiri
@@ -177,17 +265,17 @@
       const tbody = $('vendorMenuBody');
       const menu = myCart.menu || [];
       if (!menu.length) {
-        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#9ca3af;">Belum ada menu dipilih. Silakan pilih di menu "Pilih Katalog Master".</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#9ca3af;">Belum ada menu dipilih. Silakan pilih dari tabel "Katalog Master Produk" di bawah.</td></tr>';
         return;
       }
       tbody.innerHTML = menu.map(m => `
         <tr>
-          <td>${m.image ? `<img src="${m.image}" style="width:40px; height:40px; object-fit:cover; border-radius:4px;">` : 'No Image'}</td>
+          <td>${m.image ? `<img src="${m.image}" style="width:40px; height:40px; object-fit:cover; border-radius:4px;">` : '<span style="color:#9ca3af; font-size:12px;">No Image</span>'}</td>
           <td><b>${m.name}</b></td>
           <td>Rp ${m.price.toLocaleString()}</td>
           <td><b>${m.stock !== undefined ? m.stock : 0}</b></td>
           <td>
-            <button class="btn" style="padding:4px 8px; font-size:12px; margin-right:5px;" onclick="updateStock('${m.id}', ${m.stock !== undefined ? m.stock : 0})">Ubah Stok</button>
+            <button class="btn-sm" onclick="updateStock('${m.id}', ${m.stock !== undefined ? m.stock : 0})">Ubah Stok</button>
             <button class="btn-danger" onclick="deleteMenu('${m.id}')">Hapus</button>
           </td>
         </tr>
@@ -207,21 +295,29 @@
 
     // Ambil Katalog Master
     async function loadMasterCatalog() {
-      const res = await fetch('/api/catalog');
-      catalog = await res.json();
-      const grid = $('catalogGrid');
-      if (!catalog.length) {
-        grid.innerHTML = '<p style="color:#6ca3af;">Belum ada produk master dari admin.</p>';
-        return;
+      try {
+        const res = await fetch('/api/catalog');
+        catalog = await res.json();
+        const tbody = $('catalogTableBody');
+        if (!catalog.length) {
+          tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:#9ca3af;">Belum ada produk master dari admin</td></tr>';
+          return;
+        }
+        tbody.innerHTML = catalog.map(p => `
+          <tr>
+            <td>
+              ${p.image ? `<img src="${p.image}" style="width: 40px; height: 40px; object-fit: cover; border-radius: 4px;" />` : '<span style="color:#9ca3af; font-size:12px;">No Image</span>'}
+            </td>
+            <td><b>${p.name}</b></td>
+            <td>Rp ${p.price.toLocaleString()}</td>
+            <td>
+              <button class="btn-sm" onclick="addToMyCart('${p.id}')">Tambahkan ke Gerobak</button>
+            </td>
+          </tr>
+        `).join('');
+      } catch (e) {
+        console.error('Gagal memuat master katalog', e);
       }
-      grid.innerHTML = catalog.map(p => `
-        <div class="catalog-card">
-          ${p.image ? `<img src="${p.image}">` : '<div style="height:120px; background:#eee; display:flex; align-items:center; justify-content:center; font-size:12px; color:#aaa;">No Image</div>'}
-          <div style="font-weight:bold; font-size:15px;">${p.name}</div>
-          <div style="color:#0f7a4d; font-weight:600;">Rp ${p.price.toLocaleString()}</div>
-          <button class="btn" onclick="addToMyCart('${p.id}')">Tambahkan ke Gerobak</button>
-        </div>
-      `).join('');
     }
 
     // Tambah Produk ke Gerobak dari Katalog
@@ -236,7 +332,6 @@
         if (!res.ok) throw new Error(result.error || 'Gagal menambah menu');
         alert('Produk berhasil ditambahkan ke gerobak Anda!');
         loadCartData();
-        switchView('dashboard');
       } catch (err) {
         alert(err.message);
       }
@@ -267,6 +362,56 @@
       loadCartData();
     }
 
+    // Bagikan Lokasi Terkini (GPS -> PUT /api/carts/:id/location)
+    let watchId = null, lastSent = 0, firstFix = true;
+
+    function toggleShareLocation() {
+      if (watchId !== null) return stopShareLocation();
+      if (!navigator.geolocation) return alert('Browser tidak mendukung GPS');
+      if (!myCart) return alert('Data gerobak belum termuat, coba lagi sebentar');
+
+      firstFix = true;
+      $('locInfo').textContent = 'Mencari lokasi...';
+      watchId = navigator.geolocation.watchPosition(sendLocation, err => {
+        stopShareLocation();
+        alert('Lokasi tidak bisa diakses. Cek izin lokasi di browser.');
+      }, { enableHighAccuracy: true, maximumAge: 5000, timeout: 15000 });
+
+      const btn = $('shareLocBtn');
+      btn.textContent = 'Berhenti Bagikan Lokasi';
+      btn.style.background = '#ef4444';
+    }
+
+    async function sendLocation(pos) {
+      const now = Date.now();
+      if (now - lastSent < 5000) return; // kirim maksimal tiap 5 detik
+      lastSent = now;
+      const lat = pos.coords.latitude, lng = pos.coords.longitude;
+      try {
+        const r = await fetch(`/api/carts/${myCart.id}/location`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+          body: JSON.stringify({ lat, lng })
+        });
+        if (!r.ok) throw new Error('Gagal mengirim lokasi');
+        $('locInfo').textContent = 'Lokasi dibagikan · update ' + new Date().toLocaleTimeString('id-ID');
+        if (firstFix) { map.setView([lat, lng], 16); firstFix = false; }
+        loadCartData();
+      } catch (err) {
+        $('locInfo').textContent = err.message;
+      }
+    }
+
+    function stopShareLocation() {
+      if (watchId !== null) navigator.geolocation.clearWatch(watchId);
+      watchId = null;
+      const btn = $('shareLocBtn');
+      btn.textContent = 'Bagikan Lokasi Terkini';
+      btn.style.background = '#0f7a4d';
+      $('locInfo').textContent = 'Belum membagikan lokasi.';
+    }
+
+    // Jalankan Saat Halaman Dimuat
     initVendor();
   </script>
 </body>
