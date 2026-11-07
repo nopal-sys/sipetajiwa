@@ -42,7 +42,7 @@
       "lat": -6.297903531777672,
       "lng": 106.97154963367727,
       "online": true,
-      "updated": 1794067086513,
+      "updated": 1794070327762,
       "menu": [
         {
           "id": "d55dd5481cb5",
@@ -51,7 +51,34 @@
           "price": 15000,
           "image": "/catalog/imagesmenu/1793902957310-554987813.jpg",
           "available": true,
-          "stock": 10
+          "stock": 5
+        },
+        {
+          "id": "ad3dbecb9fb4",
+          "productId": "f3e8d3d28497",
+          "name": "es kopi susu",
+          "price": 25000,
+          "image": "/catalog/imagesmenu/1793907423367-493580271.jpg",
+          "available": false,
+          "stock": 0
+        },
+        {
+          "id": "0d9ec0e625b5",
+          "productId": "caa71b34ca56",
+          "name": "hazelnut latte",
+          "price": 12000,
+          "image": "/catalog/imagesmenu/1794068678214-137738341.jpg",
+          "available": true,
+          "stock": 13
+        },
+        {
+          "id": "8f0960db133c",
+          "productId": "aff9fc4c32f7",
+          "name": "es kopi vanilla",
+          "price": 8000,
+          "image": "/catalog/imagesmenu/1794071229408-877981058.webp",
+          "available": true,
+          "stock": 6
         }
       ]
     },

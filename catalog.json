@@ -11,6 +11,18 @@
       "name": "es kopi susu",
       "price": 25000,
       "image": "/catalog/imagesmenu/1793907423367-493580271.jpg"
+    },
+    {
+      "id": "caa71b34ca56",
+      "name": "hazelnut latte",
+      "price": 12000,
+      "image": "/catalog/imagesmenu/1794068678214-137738341.jpg"
+    },
+    {
+      "id": "aff9fc4c32f7",
+      "name": "es kopi vanilla",
+      "price": 8000,
+      "image": "/catalog/imagesmenu/1794071229408-877981058.webp"
     }
   ]
 }
