@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -10,419 +11,1545 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+
 <style>
-  :root {
-    --red: #E31E24; --red-d: #B80F16; --red-l: #FFE9E7;
-    --navy: #1B1F6B; --navy-d: #0F1244; --navy-l: #ECEDFB;
-    --yellow: #FFD400; --cream: #FFF8F1;
-    --ink: #1B1A33; --mut: #6F6C85; --line: #F0E7E0;
-    --ok: #0E9F57; --ok-bg: #DDF6E9;
-    --font: 'Plus Jakarta Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+:root {
+  --red: #E31E24; --red-d: #B80F16; --red-l: #FFE9E7;
+  --navy: #1B1F6B; --navy-d: #0F1244; --navy-l: #ECEDFB;
+  --yellow: #FFD400; --cream: #FFF8F1;
+  --ink: #1B1A33; --mut: #6F6C85; --line: #F0E7E0;
+  --ok: #0E9F57; --ok-bg: #DDF6E9;
+  --font: 'Plus Jakarta Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html, body {
+  height: 100%;
+  margin: 0;
+  font: 15px/1.5 var(--font);
+  color: var(--ink);
+  background: var(--cream);
+}
+
+#map {
+  position: absolute;
+  inset: 0;
+}
+
+/* TOP BAR */
+
+#bar {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  right: 12px;
+  z-index: 1000;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  pointer-events: none;
+}
+
+#bar > * {
+  pointer-events: auto;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #fff;
+  padding: 6px 16px 6px 6px;
+  border-radius: 999px;
+  box-shadow: 0 6px 20px rgba(27,31,107,.18);
+  min-width: 0;
+}
+
+.brand-logo {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  flex: none;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(135deg,var(--red),var(--red-d));
+  overflow: hidden;
+}
+
+.brand-logo img {
+  width: 36px;
+  height: auto;
+  filter: drop-shadow(0 2px 2px rgba(0,0,0,.25));
+}
+
+.brand-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.15;
+  min-width: 0;
+}
+
+.brand-text b {
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--navy);
+  letter-spacing: -.2px;
+  white-space: nowrap;
+}
+
+.brand-text small {
+  font-size: 11px;
+  color: var(--mut);
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: #fff;
+  color: var(--navy);
+  border: 0;
+  border-radius: 999px;
+  padding: 11px 16px;
+  font: 700 13.5px var(--font);
+  cursor: pointer;
+  box-shadow: 0 6px 20px rgba(27,31,107,.18);
+  transition: transform .15s, box-shadow .15s, background .15s;
+}
+
+.chip svg {
+  width: 17px;
+  height: 17px;
+  flex: none;
+}
+
+.chip:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 24px rgba(27,31,107,.25);
+}
+
+.chip:active {
+  transform: scale(.97);
+}
+
+.chip.main {
+  background: linear-gradient(135deg,var(--red),var(--red-d));
+  color: #fff;
+  box-shadow: 0 8px 22px rgba(227,30,36,.4);
+  max-width: 190px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chip.main:hover {
+  box-shadow: 0 12px 26px rgba(227,30,36,.5);
+}
+
+/* PANEL MENU GEROBAK */
+
+#panel {
+  position: absolute;
+  z-index: 1000;
+  background: #fff;
+  padding: 10px 18px 18px;
+  overflow: auto;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  max-height: 58%;
+  border-radius: 26px 26px 0 0;
+  box-shadow: 0 -10px 40px rgba(27,31,107,.22);
+  animation: sheetUp .3s cubic-bezier(.2,.9,.3,1);
+}
+
+#panel::before {
+  content: "";
+  display: block;
+  width: 44px;
+  height: 5px;
+  border-radius: 99px;
+  background: #E6DDD6;
+  margin: 0 auto 12px;
+}
+
+#panel:empty {
+  display: none;
+}
+
+#panel::-webkit-scrollbar {
+  width: 6px;
+}
+
+#panel::-webkit-scrollbar-thumb {
+  background: #E6DDD6;
+  border-radius: 99px;
+}
+
+@keyframes sheetUp {
+  from {
+    transform: translateY(40px);
+    opacity: 0;
   }
-  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-  html, body { height: 100%; margin: 0; font: 15px/1.5 var(--font); color: var(--ink); background: var(--cream); }
-  #map { position: absolute; inset: 0; }        /* peta full layar */
+  to {
+    transform: none;
+    opacity: 1;
+  }
+}
 
-  /* ---------- Top bar ---------- */
-  #bar { position: absolute; top: 12px; left: 12px; right: 12px; z-index: 1000;
-         display: flex; justify-content: space-between; align-items: center; gap: 8px; pointer-events: none; }
-  #bar > * { pointer-events: auto; }
-  .brand { display: flex; align-items: center; gap: 10px; background: #fff; padding: 6px 16px 6px 6px;
-           border-radius: 999px; box-shadow: 0 6px 20px rgba(27,31,107,.18); min-width: 0; }
-  .brand-logo { width: 42px; height: 42px; border-radius: 50%; flex: none; display: grid; place-items: center;
-                background: linear-gradient(135deg, var(--red), var(--red-d)); overflow: hidden; }
-  .brand-logo img { width: 36px; height: auto; filter: drop-shadow(0 2px 2px rgba(0,0,0,.25)); }
-  .brand-text { display: flex; flex-direction: column; line-height: 1.15; min-width: 0; }
-  .brand-text b { font-size: 15px; font-weight: 800; color: var(--navy); letter-spacing: -.2px; white-space: nowrap; }
-  .brand-text small { font-size: 11px; color: var(--mut); font-weight: 500; white-space: nowrap; }
-  .actions { display: flex; gap: 8px; align-items: center; }
-  .chip { display: inline-flex; align-items: center; gap: 7px; background: #fff; color: var(--navy); border: 0;
-          border-radius: 999px; padding: 11px 16px; font: 700 13.5px var(--font); cursor: pointer;
-          box-shadow: 0 6px 20px rgba(27,31,107,.18); transition: transform .15s, box-shadow .15s, background .15s; }
-  .chip svg { width: 17px; height: 17px; flex: none; }
-  .chip:hover { transform: translateY(-1px); box-shadow: 0 10px 24px rgba(27,31,107,.25); }
-  .chip:active { transform: scale(.97); }
-  .chip.main { background: linear-gradient(135deg, var(--red), var(--red-d)); color: #fff;
-               box-shadow: 0 8px 22px rgba(227,30,36,.4); max-width: 190px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .chip.main:hover { box-shadow: 0 12px 26px rgba(227,30,36,.5); }
-
-  /* ---------- Panel menu gerobak ---------- */
-  #panel { position: absolute; z-index: 1000; background: #fff; padding: 10px 18px 18px; overflow: auto;
-           left: 0; right: 0; bottom: 0; max-height: 58%; border-radius: 26px 26px 0 0;
-           box-shadow: 0 -10px 40px rgba(27,31,107,.22); animation: sheetUp .3s cubic-bezier(.2,.9,.3,1); }
-  #panel::before { content: ""; display: block; width: 44px; height: 5px; border-radius: 99px; background: #E6DDD6; margin: 0 auto 12px; }
-  #panel:empty { display: none; }
-  #panel::-webkit-scrollbar { width: 6px; }
-  #panel::-webkit-scrollbar-thumb { background: #E6DDD6; border-radius: 99px; }
-  @keyframes sheetUp { from { transform: translateY(40px); opacity: 0; } to { transform: none; opacity: 1; } }
-  @media (min-width: 760px) {
-    #panel { left: auto; right: 14px; top: 78px; bottom: auto; width: 370px; max-height: calc(100% - 100px);
-             border-radius: 24px; padding: 18px; box-shadow: 0 16px 48px rgba(27,31,107,.25); }
-    #panel::before { display: none; }
+@media (min-width: 760px) {
+  #panel {
+    left: auto;
+    right: 14px;
+    top: 78px;
+    bottom: auto;
+    width: 370px;
+    max-height: calc(100% - 100px);
+    border-radius: 24px;
+    padding: 18px;
+    box-shadow: 0 16px 48px rgba(27,31,107,.25);
   }
 
-  .c-head { display: flex; gap: 12px; align-items: center; padding: 14px; margin: 0 0 14px; border-radius: 18px; color: #fff;
-            background: radial-gradient(circle at 1px 1px, rgba(255,255,255,.16) 1.4px, transparent 0) 0 0 / 12px 12px,
-                        linear-gradient(135deg, var(--red), var(--red-d)); position: relative; }
-  .c-ava { width: 50px; height: 50px; border-radius: 14px; background: #fff; flex: none; display: grid; place-items: center; }
-  .c-ava img { width: 42px; height: auto; }
-  .c-info { min-width: 0; flex: 1; }
-  h3 { margin: 0; font-size: 17px; font-weight: 800; letter-spacing: -.2px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-  .c-head .mut { color: rgba(255,255,255,.85); margin-top: 2px; }
-  .mut { color: var(--mut); font-size: 12.5px; }
-  
-  /* Tombol Close Panel */
-  .c-close { position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,.2); border: 0; color: #fff;
-             width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; cursor: pointer;
-             font-size: 16px; font-weight: 800; transition: background .15s; }
-  .c-close:hover { background: rgba(0,0,0,.4); }
+  #panel::before {
+    display: none;
+  }
+}
 
-  .sec-title { display: flex; align-items: center; justify-content: space-between; margin: 0 2px 8px; font-weight: 800; font-size: 14px; color: var(--navy); }
-  .sec-title::after { content: ""; flex: 1; height: 2px; margin-left: 12px; border-radius: 9px;
-                      background: repeating-linear-gradient(90deg, var(--line) 0 6px, transparent 6px 12px); }
+.c-head {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 14px;
+  margin: 0 0 14px;
+  border-radius: 18px;
+  color: #fff;
+  background:
+    radial-gradient(circle at 1px 1px, rgba(255,255,255,.16) 1.4px, transparent 0) 0 0 / 12px 12px,
+    linear-gradient(135deg, var(--red), var(--red-d));
+  position: relative;
+}
 
-  .tag { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 800; padding: 3px 9px; border-radius: 999px;
-         background: var(--ok-bg); color: var(--ok); letter-spacing: .2px; }
-  .tag::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
-  .tag.off { background: #FFE1DF; color: var(--red-d); }
+.c-ava {
+  width: 50px;
+  height: 50px;
+  border-radius: 14px;
+  background: #fff;
+  flex: none;
+  display: grid;
+  place-items: center;
+}
 
-  .row { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 10px; margin-bottom: 8px;
-         background: var(--cream); border: 1px solid var(--line); border-radius: 16px; transition: transform .15s, box-shadow .15s; }
-  .row:hover { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(27,31,107,.08); }
-  .m-left { display: flex; align-items: center; gap: 12px; min-width: 0; }
-  .m-img { width: 52px; height: 52px; border-radius: 14px; object-fit: cover; flex: none; background: #fff; box-shadow: 0 2px 8px rgba(0,0,0,.1); }
-  .m-img.ph { display: grid; place-items: center; font-size: 22px; background: var(--red-l); box-shadow: none; }
-  .m-name { font-weight: 700; font-size: 14px; line-height: 1.3; color: var(--ink); }
-  .row.soldout { opacity: .55; background: #F6F1EC; }
-  .row.soldout:hover { transform: none; box-shadow: none; }
-  .row.soldout .m-img { filter: grayscale(.85); }
-  .row.soldout .m-price { color: var(--mut); background: #ECE6E0; text-decoration: line-through; }
-  .m-sold { display: block; margin-top: 2px; font-size: 11px; font-weight: 600; color: var(--mut); }
-  .m-price { flex: none; font-weight: 800; font-size: 13px; color: var(--red-d); background: var(--red-l); padding: 6px 11px; border-radius: 999px; }
-  .empty { text-align: center; padding: 22px 12px; border-radius: 16px; background: var(--cream); border: 2px dashed var(--line); }
-  .empty .em { font-size: 30px; display: block; margin-bottom: 4px; }
+.c-ava img {
+  width: 42px;
+  height: auto;
+}
 
-  /* ---------- Hint ---------- */
-  #hint { position: absolute; z-index: 900; left: 50%; bottom: 22px; transform: translateX(-50%); white-space: nowrap;
-          background: var(--navy); color: #fff; font-weight: 600; font-size: 13px; padding: 10px 18px; border-radius: 999px;
-          box-shadow: 0 10px 26px rgba(15,18,68,.35); display: flex; align-items: center; gap: 8px; pointer-events: none; animation: bob 2.4s ease-in-out infinite; }
-  #hint i { width: 8px; height: 8px; border-radius: 50%; background: var(--yellow); box-shadow: 0 0 0 4px rgba(255,212,0,.3); }
-  #panel:not(:empty) ~ #hint { display: none; }
-  @keyframes bob { 0%,100% { transform: translate(-50%, 0); } 50% { transform: translate(-50%, -4px); } }
+.c-info {
+  min-width: 0;
+  flex: 1;
+}
 
-  /* ---------- Tombol & input ---------- */
-  button.s { border: 1.5px solid #E4DAD2; background: #fff; color: var(--ink); border-radius: 14px; padding: 12px 18px;
-             cursor: pointer; font: 700 14px var(--font); transition: transform .15s, box-shadow .15s, background .15s; }
-  button.s:hover { background: var(--cream); }
-  button.s:active { transform: scale(.97); }
-  button.s.p { background: linear-gradient(135deg, var(--red), var(--red-d)); color: #fff; border-color: transparent; box-shadow: 0 8px 20px rgba(227,30,36,.35); }
-  button.s.p:hover { box-shadow: 0 12px 26px rgba(227,30,36,.45); transform: translateY(-1px); }
-  .fld { display: block; margin-bottom: 12px; }
-  .fld > span { display: block; font-size: 12px; font-weight: 700; color: var(--navy); margin-bottom: 5px; }
-  input { font: 500 14.5px var(--font); padding: 12px 14px; border: 1.5px solid #E4DAD2; border-radius: 14px; width: 100%;
-          background: var(--cream); color: var(--ink); transition: border-color .15s, box-shadow .15s, background .15s; }
-  input::placeholder { color: #B2ACBF; }
-  input:focus { outline: 0; border-color: var(--red); background: #fff; box-shadow: 0 0 0 4px rgba(227,30,36,.12); }
+h3 {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 800;
+  letter-spacing: -.2px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
 
-  /* ---------- Dialog login ---------- */
-  dialog { border: 0; border-radius: 26px; padding: 0; width: min(380px, 92vw); overflow: hidden; color: var(--ink);
-           box-shadow: 0 30px 80px rgba(15,18,68,.45); font-family: var(--font); }
-  dialog[open] { animation: pop .25s cubic-bezier(.2,1.1,.4,1); }
-  dialog::backdrop { background: rgba(15,18,68,.55); backdrop-filter: blur(5px); }
-  @keyframes pop { from { transform: scale(.92) translateY(10px); opacity: 0; } to { transform: none; opacity: 1; } }
-  .dlg-hero { display: flex; align-items: center; gap: 14px; padding: 22px 22px 20px; color: #fff;
-              background: radial-gradient(circle at 1px 1px, rgba(255,255,255,.16) 1.4px, transparent 0) 0 0 / 12px 12px,
-                          linear-gradient(135deg, var(--red), var(--red-d)); }
-  .dlg-hero .c-ava { width: 56px; height: 56px; border-radius: 16px; }
-  .dlg-hero .c-ava img { width: 46px; }
-  .dlg-hero h3 { font-size: 22px; }
-  .dlg-hero p { margin: 2px 0 0; font-size: 12.5px; color: rgba(255,255,255,.88); }
-  .dlg-body { padding: 20px 22px 22px; }
-  .err { color: var(--red-d); font-size: 13px; font-weight: 600; margin: 0; min-height: 0; }
-  .err:not(:empty) { background: var(--red-l); padding: 9px 12px; border-radius: 12px; margin-bottom: 12px; }
-  .dlg-actions { display: flex; gap: 10px; margin-top: 4px; }
-  .dlg-actions button { flex: 1; }
+.c-head .mut {
+  color: rgba(255,255,255,.85);
+  margin-top: 2px;
+}
 
-  /* ---------- Marker & kontrol Leaflet ---------- */
-  .leaflet-marker-icon { filter: drop-shadow(0 6px 6px rgba(0,0,0,.3)); }
-  .leaflet-top.leaflet-left { top: 74px; }
-  .leaflet-left .leaflet-control { margin-left: 12px; }
-  .leaflet-bar { border: 0 !important; border-radius: 14px !important; overflow: hidden; box-shadow: 0 6px 20px rgba(27,31,107,.18) !important; }
-  .leaflet-bar a { width: 36px !important; height: 36px !important; line-height: 36px !important; color: var(--navy) !important; font-weight: 700; }
-  .leaflet-bar a:hover { background: var(--red-l) !important; color: var(--red-d) !important; }
-  .leaflet-control-attribution { font-size: 10px !important; border-radius: 10px 0 0 0; }
+.mut {
+  color: var(--mut);
+  font-size: 12.5px;
+}
 
-  /* ---------- Dialog custom (pengganti alert bawaan browser) ---------- */
-  .ui-ov { position: fixed; inset: 0; z-index: 10000; display: grid; place-items: center; padding: 20px;
-           background: rgba(15,18,68,.55); backdrop-filter: blur(5px); animation: ovIn .18s ease; }
-  .ui-ov.out { opacity: 0; transition: opacity .15s; }
-  @keyframes ovIn { from { opacity: 0; } to { opacity: 1; } }
-  .ui-md { width: min(380px, 100%); background: #fff; border-radius: 26px; padding: 28px 24px 22px; text-align: center;
-           box-shadow: 0 30px 80px rgba(15,18,68,.45); animation: pop .25s cubic-bezier(.2,1.1,.4,1); font-family: var(--font); }
-  .ui-ic { width: 64px; height: 64px; border-radius: 22px; margin: 0 auto 14px; display: grid; place-items: center; }
-  .ui-ic svg { width: 32px; height: 32px; }
-  .ui-ic.ok { background: var(--ok-bg); color: var(--ok); }
-  .ui-ic.warn { background: #FFF3C4; color: #B27B00; }
-  .ui-ic.danger { background: var(--red-l); color: var(--red); }
-  .ui-t { margin: 0 0 6px; font-size: 19px; font-weight: 800; color: var(--navy); letter-spacing: -.2px; }
-  .ui-m { margin: 0 0 18px; font-size: 14px; color: var(--mut); line-height: 1.55; }
-  .ui-ac { display: flex; gap: 10px; }
-  .ui-b { flex: 1; border: 0; cursor: pointer; font: 800 14.5px var(--font); padding: 13px 18px; border-radius: 14px; color: #fff;
-          background: linear-gradient(135deg, var(--red), var(--red-d)); box-shadow: 0 8px 20px rgba(227,30,36,.35); transition: transform .15s; }
-  .ui-b:active { transform: scale(.97); }
-  .ui-b.ghost { background: #F4EEE9; color: var(--ink); box-shadow: none; }
+.c-close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: rgba(0,0,0,.2);
+  border: 0;
+  color: #fff;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: 800;
+  transition: background .15s;
+}
+
+.c-close:hover {
+  background: rgba(0,0,0,.4);
+}
+
+.sec-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 0 2px 8px;
+  font-weight: 800;
+  font-size: 14px;
+  color: var(--navy);
+}
+
+.sec-title::after {
+  content: "";
+  flex: 1;
+  height: 2px;
+  margin-left: 12px;
+  border-radius: 9px;
+  background: repeating-linear-gradient(90deg, var(--line) 0 6px, transparent 6px 12px);
+}
+
+.tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: var(--ok-bg);
+  color: var(--ok);
+  letter-spacing: .2px;
+}
+
+.tag::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.tag.off {
+  background: #FFE1DF;
+  color: var(--red-d);
+}
+
+.row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  margin-bottom: 8px;
+  background: var(--cream);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  transition: transform .15s, box-shadow .15s;
+}
+
+.row:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(27,31,107,.08);
+}
+
+.m-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.m-img {
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  object-fit: cover;
+  flex: none;
+  background: #fff;
+  box-shadow: 0 2px 8px rgba(0,0,0,.1);
+}
+
+.m-img.ph {
+  display: grid;
+  place-items: center;
+  font-size: 22px;
+  background: var(--red-l);
+  box-shadow: none;
+}
+
+.m-name {
+  font-weight: 700;
+  font-size: 14px;
+  line-height: 1.3;
+  color: var(--ink);
+}
+
+.row.soldout {
+  opacity: .55;
+  background: #F6F1EC;
+}
+
+.row.soldout:hover {
+  transform: none;
+  box-shadow: none;
+}
+
+.row.soldout .m-img {
+  filter: grayscale(.85);
+}
+
+.row.soldout .m-price {
+  color: var(--mut);
+  background: #ECE6E0;
+  text-decoration: line-through;
+}
+
+.m-sold {
+  display: block;
+  margin-top: 2px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--mut);
+}
+
+.m-price {
+  flex: none;
+  font-weight: 800;
+  font-size: 13px;
+  color: var(--red-d);
+  background: var(--red-l);
+  padding: 6px 11px;
+  border-radius: 999px;
+}
+
+.empty {
+  text-align: center;
+  padding: 22px 12px;
+  border-radius: 16px;
+  background: var(--cream);
+  border: 2px dashed var(--line);
+}
+
+.empty .em {
+  font-size: 30px;
+  display: block;
+  margin-bottom: 4px;
+}
+
+/* HINT */
+
+#hint {
+  position: absolute;
+  z-index: 900;
+  left: 50%;
+  bottom: 22px;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  background: var(--navy);
+  color: #fff;
+  font-weight: 600;
+  font-size: 13px;
+  padding: 10px 18px;
+  border-radius: 999px;
+  box-shadow: 0 10px 26px rgba(15,18,68,.35);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  pointer-events: none;
+  animation: bob 2.4s ease-in-out infinite;
+}
+
+#hint i {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--yellow);
+  box-shadow: 0 0 0 4px rgba(255,212,0,.3);
+}
+
+#panel:not(:empty) ~ #hint {
+  display: none;
+}
+
+@keyframes bob {
+  0%,100% { transform: translate(-50%, 0); }
+  50% { transform: translate(-50%, -4px); }
+}
+
+/* TOMBOL DAN INPUT */
+
+button.s {
+  border: 1.5px solid #E4DAD2;
+  background: #fff;
+  color: var(--ink);
+  border-radius: 14px;
+  padding: 12px 18px;
+  cursor: pointer;
+  font: 700 14px var(--font);
+  transition: transform .15s, box-shadow .15s, background .15s;
+}
+
+button.s:hover {
+  background: var(--cream);
+}
+
+button.s:active {
+  transform: scale(.97);
+}
+
+button.s.p {
+  background: linear-gradient(135deg, var(--red), var(--red-d));
+  color: #fff;
+  border-color: transparent;
+  box-shadow: 0 8px 20px rgba(227,30,36,.35);
+}
+
+button.s.p:hover {
+  box-shadow: 0 12px 26px rgba(227,30,36,.45);
+  transform: translateY(-1px);
+}
+
+.fld {
+  display: block;
+  margin-bottom: 12px;
+}
+
+.fld > span {
+  display: block;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--navy);
+  margin-bottom: 5px;
+}
+
+input {
+  font: 500 14.5px var(--font);
+  padding: 12px 14px;
+  border: 1.5px solid #E4DAD2;
+  border-radius: 14px;
+  width: 100%;
+  background: var(--cream);
+  color: var(--ink);
+  transition: border-color .15s, box-shadow .15s, background .15s;
+}
+
+input::placeholder {
+  color: #B2ACBF;
+}
+
+input:focus {
+  outline: 0;
+  border-color: var(--red);
+  background: #fff;
+  box-shadow: 0 0 0 4px rgba(227,30,36,.12);
+}
+
+/* DIALOG LOGIN */
+
+dialog {
+  border: 0;
+  border-radius: 26px;
+  padding: 0;
+  width: min(380px, 92vw);
+  overflow: hidden;
+  color: var(--ink);
+  box-shadow: 0 30px 80px rgba(15,18,68,.45);
+  font-family: var(--font);
+}
+
+dialog[open] {
+  animation: pop .25s cubic-bezier(.2,1.1,.4,1);
+}
+
+dialog::backdrop {
+  background: rgba(15,18,68,.55);
+  backdrop-filter: blur(5px);
+}
+
+@keyframes pop {
+  from {
+    transform: scale(.92) translateY(10px);
+    opacity: 0;
+  }
+  to {
+    transform: none;
+    opacity: 1;
+  }
+}
+
+.dlg-hero {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 22px 22px 20px;
+  color: #fff;
+  background:
+    radial-gradient(circle at 1px 1px, rgba(255,255,255,.16) 1.4px, transparent 0) 0 0 / 12px 12px,
+    linear-gradient(135deg, var(--red), var(--red-d));
+}
+
+.dlg-hero .c-ava {
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
+}
+
+.dlg-hero .c-ava img {
+  width: 46px;
+}
+
+.dlg-hero h3 {
+  font-size: 22px;
+}
+
+.dlg-hero p {
+  margin: 2px 0 0;
+  font-size: 12.5px;
+  color: rgba(255,255,255,.88);
+}
+
+.dlg-body {
+  padding: 20px 22px 22px;
+}
+
+.err {
+  color: var(--red-d);
+  font-size: 13px;
+  font-weight: 600;
+  margin: 0;
+  min-height: 0;
+}
+
+.err:not(:empty) {
+  background: var(--red-l);
+  padding: 9px 12px;
+  border-radius: 12px;
+  margin-bottom: 12px;
+}
+
+.dlg-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.dlg-actions button {
+  flex: 1;
+}
+
+/* FITUR MATA PASSWORD */
+
+.password-wrap {
+  position: relative;
+  width: 100%;
+}
+
+.password-wrap input {
+  padding-right: 46px;
+}
+
+.toggle-password {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border: none;
+  padding: 0;
+  background: transparent;
+  color: #8A8494;
+  cursor: pointer;
+  border-radius: 8px;
+}
+
+.toggle-password:hover {
+  background: rgba(0,0,0,.05);
+  color: var(--red-d);
+}
+
+.toggle-password svg {
+  width: 19px;
+  height: 19px;
+}
+
+.toggle-password:focus-visible {
+  outline: 2px solid var(--red);
+}
+
+/* MARKER DAN KONTROL LEAFLET */
+
+.leaflet-marker-icon {
+  filter: drop-shadow(0 6px 6px rgba(0,0,0,.3));
+}
+
+.leaflet-top.leaflet-left {
+  top: 74px;
+}
+
+.leaflet-left .leaflet-control {
+  margin-left: 12px;
+}
+
+.leaflet-bar {
+  border: 0 !important;
+  border-radius: 14px !important;
+  overflow: hidden;
+  box-shadow: 0 6px 20px rgba(27,31,107,.18) !important;
+}
+
+.leaflet-bar a {
+  width: 36px !important;
+  height: 36px !important;
+  line-height: 36px !important;
+  color: var(--navy) !important;
+  font-weight: 700;
+}
+
+.leaflet-bar a:hover {
+  background: var(--red-l) !important;
+  color: var(--red-d) !important;
+}
+
+.leaflet-control-attribution {
+  font-size: 10px !important;
+  border-radius: 10px 0 0 0;
+}
+
+/* DIALOG CUSTOM */
+
+.ui-ov {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(15,18,68,.55);
+  backdrop-filter: blur(5px);
+  animation: ovIn .18s ease;
+}
+
+.ui-ov.out {
+  opacity: 0;
+  transition: opacity .15s;
+}
+
+@keyframes ovIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.ui-md {
+  width: min(380px, 100%);
+  background: #fff;
+  border-radius: 26px;
+  padding: 28px 24px 22px;
+  text-align: center;
+  box-shadow: 0 30px 80px rgba(15,18,68,.45);
+  animation: pop .25s cubic-bezier(.2,1.1,.4,1);
+  font-family: var(--font);
+}
+
+.ui-ic {
+  width: 64px;
+  height: 64px;
+  border-radius: 22px;
+  margin: 0 auto 14px;
+  display: grid;
+  place-items: center;
+}
+
+.ui-ic svg {
+  width: 32px;
+  height: 32px;
+}
+
+.ui-ic.ok {
+  background: var(--ok-bg);
+  color: var(--ok);
+}
+
+.ui-ic.warn {
+  background: #FFF3C4;
+  color: #B27B00;
+}
+
+.ui-ic.danger {
+  background: var(--red-l);
+  color: var(--red);
+}
+
+.ui-t {
+  margin: 0 0 6px;
+  font-size: 19px;
+  font-weight: 800;
+  color: var(--navy);
+  letter-spacing: -.2px;
+}
+
+.ui-m {
+  margin: 0 0 18px;
+  font-size: 14px;
+  color: var(--mut);
+  line-height: 1.55;
+}
+
+.ui-ac {
+  display: flex;
+  gap: 10px;
+}
+
+.ui-b {
+  flex: 1;
+  border: 0;
+  cursor: pointer;
+  font: 800 14.5px var(--font);
+  padding: 13px 18px;
+  border-radius: 14px;
+  color: #fff;
+  background: linear-gradient(135deg, var(--red), var(--red-d));
+  box-shadow: 0 8px 20px rgba(227,30,36,.35);
+  transition: transform .15s;
+}
+
+.ui-b:active {
+  transform: scale(.97);
+}
+
+.ui-b.ghost {
+  background: #F4EEE9;
+  color: var(--ink);
+  box-shadow: none;
+}
 </style>
 </head>
+
 <body>
+
 <div id="map"></div>
+
 <div id="bar">
   <div class="brand">
-    <span class="brand-logo"><img src="gerobak.png" alt=""></span>
-    <span class="brand-text"><b>Sejuta Jiwa</b><small>Cari gerobak terdekat</small></span>
+    <span class="brand-logo">
+      <img src="gerobak.png" alt="">
+    </span>
+
+    <span class="brand-text">
+      <b>Sejuta Jiwa</b>
+      <small>Cari gerobak terdekat</small>
+    </span>
   </div>
+
   <div class="actions">
+
     <button class="chip" id="near">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/><circle cx="12" cy="12" r="7.5"/></svg>
+      <svg viewBox="0 0 24 24" fill="none"
+           stroke="currentColor" stroke-width="2.2"
+           stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="3.2"/>
+        <path d="M12 2v3M12 19v3M2 12h3M19 12h3"/>
+        <circle cx="12" cy="12" r="7.5"/>
+      </svg>
       <span>Dekat saya</span>
     </button>
+
     <button class="chip main" id="auth">Masuk</button>
+
   </div>
 </div>
+
 <div id="panel"></div>
-<div id="hint"><i></i>Ketuk gerobak di peta untuk lihat menu</div>
+
+<div id="hint">
+  <i></i>
+  Ketuk gerobak di peta untuk lihat menu
+</div>
+
+<!-- DIALOG LOGIN -->
 
 <dialog id="dlg">
+
   <form id="loginForm">
+
     <div class="dlg-hero">
-      <div class="c-ava"><img src="gerobak.png" alt=""></div>
+
+      <div class="c-ava">
+        <img src="gerobak.png" alt="">
+      </div>
+
       <div>
         <h3>Masuk</h3>
         <p>Khusus untuk abang gerobak dan admin.</p>
       </div>
+
     </div>
+
     <div class="dlg-body">
-      <label class="fld"><span>Username</span>
-        <input id="lu" placeholder="Masukkan username" autocomplete="username" required></label>
-      <label class="fld"><span>Password</span>
-        <input id="lp" type="password" placeholder="Masukkan password" autocomplete="current-password" required></label>
+
+      <label class="fld">
+        <span>Username</span>
+        <input
+          id="lu"
+          placeholder="Masukkan username"
+          autocomplete="username"
+          required
+        >
+      </label>
+
+      <!-- PASSWORD DENGAN IKON MATA -->
+
+      <label class="fld">
+        <span>Password</span>
+
+        <div class="password-wrap">
+
+          <input
+            id="lp"
+            type="password"
+            placeholder="Masukkan password"
+            autocomplete="current-password"
+            required
+          >
+
+          <button
+            class="toggle-password"
+            id="togglePassword"
+            type="button"
+            aria-label="Tampilkan password"
+            title="Tampilkan password"
+          >
+
+            <svg
+              id="eyeIcon"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+
+              <!-- Mata dicoret: password tersembunyi -->
+
+              <path d="M3 3l18 18"/>
+              <path d="M10.6 10.6a2 2 0 0 0 2.8 2.8"/>
+              <path d="M9.9 5.2A10.8 10.8 0 0 1 12 5c6.4 0 10 7 10 7a16 16 0 0 1-3.1 3.8"/>
+              <path d="M6.2 6.2C3.5 8 2 12 2 12s3.6 7 10 7c1 0 1.9-.2 2.7-.5"/>
+
+            </svg>
+
+          </button>
+
+        </div>
+      </label>
+
       <p id="lerr" class="err"></p>
+
       <div class="dlg-actions">
-        <button class="s" type="button" onclick="dlg.close()">Batal</button>
-        <button class="s p" type="submit">Masuk</button>
+
+        <button class="s" type="button" onclick="dlg.close()">
+          Batal
+        </button>
+
+        <button class="s p" type="submit">
+          Masuk
+        </button>
+
       </div>
+
     </div>
   </form>
 </dialog>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
 <script>
-// ---------- UI: dialog custom pengganti alert bawaan browser (tombol "Oke") ----------
+
+// ---------- UI: DIALOG CUSTOM ----------
+
 const UI = (() => {
+
   const IC = {
+
     ok: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>',
-    warn: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 7.5v6"/><path d="M12 17v.01"/><circle cx="12" cy="12" r="9.5"/></svg>',
-    danger: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg>'
+
+    warn: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 7.5v6"/><path d="M12 17v.01"/><circle cx="12" cy="12" r="9.5"/></svg>',
+
+    danger: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg>'
+
   };
+
   function open(o) {
+
     return new Promise(resolve => {
-      const ov = document.createElement('div'); ov.className = 'ui-ov';
-      ov.innerHTML = `<div class="ui-md" role="dialog" aria-modal="true">
-        <div class="ui-ic ${o.tone}">${IC[o.tone]}</div>
-        <h4 class="ui-t"></h4><p class="ui-m"></p>
-        <div class="ui-ac">${o.cancel ? '<button type="button" class="ui-b ghost" data-r="c"></button>' : ''}<button type="button" class="ui-b" data-r="o"></button></div>
-      </div>`;
+
+      const ov = document.createElement('div');
+      ov.className = 'ui-ov';
+
+      ov.innerHTML = `
+        <div class="ui-md" role="dialog" aria-modal="true">
+          <div class="ui-ic ${o.tone}">${IC[o.tone]}</div>
+          <h4 class="ui-t"></h4>
+          <p class="ui-m"></p>
+          <div class="ui-ac">
+            ${o.cancel ? '<button type="button" class="ui-b ghost" data-r="c"></button>' : ''}
+            <button type="button" class="ui-b" data-r="o"></button>
+          </div>
+        </div>
+      `;
+
       ov.querySelector('.ui-t').textContent = o.title;
       ov.querySelector('.ui-m').textContent = o.message;
       ov.querySelector('[data-r="o"]').textContent = o.ok;
-      if (o.cancel) ov.querySelector('[data-r="c"]').textContent = o.cancel;
+
+      if (o.cancel) {
+        ov.querySelector('[data-r="c"]').textContent = o.cancel;
+      }
+
       const prev = document.activeElement;
+
       const done = v => {
+
         document.removeEventListener('keydown', key, true);
-        ov.classList.add('out'); setTimeout(() => ov.remove(), 150);
+
+        ov.classList.add('out');
+
+        setTimeout(() => ov.remove(), 150);
+
         if (prev && prev.focus) prev.focus();
+
         resolve(v);
+
       };
+
       const key = e => {
-        if (e.key === 'Escape') { e.preventDefault(); done(o.cancel ? false : true); }
-        else if (e.key === 'Enter') { e.preventDefault(); done(true); }
+
+        if (e.key === 'Escape') {
+          e.preventDefault();
+          done(o.cancel ? false : true);
+
+        } else if (e.key === 'Enter') {
+          e.preventDefault();
+          done(true);
+        }
+
       };
+
       ov.addEventListener('click', e => {
+
         const b = e.target.closest('[data-r]');
-        if (b) done(b.dataset.r === 'o');
-        else if (e.target === ov && o.cancel) done(false);
+
+        if (b) {
+          done(b.dataset.r === 'o');
+
+        } else if (e.target === ov && o.cancel) {
+          done(false);
+        }
+
       });
+
       document.addEventListener('keydown', key, true);
+
       document.body.appendChild(ov);
+
       ov.querySelector('[data-r="o"]').focus();
+
     });
+
   }
+
   return {
+
     alert(m) {
+
       const good = /berhasil|sukses/i.test(m);
-      return open({ tone: good ? 'ok' : 'warn', title: good ? 'Berhasil!' : 'Ups, ada masalah', message: String(m), ok: 'Oke' });
+
+      return open({
+        tone: good ? 'ok' : 'warn',
+        title: good ? 'Berhasil!' : 'Ups, ada masalah',
+        message: String(m),
+        ok: 'Oke'
+      });
+
     }
+
   };
+
 })();
-window.alert = m => { UI.alert(m); };
+
+window.alert = m => {
+  UI.alert(m);
+};
+
+// ---------- HELPER ----------
 
 const $ = id => document.getElementById(id);
-const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+const esc = s => String(s).replace(/[&<>"']/g, c => ({
+  '&':'&amp;',
+  '<':'&lt;',
+  '>':'&gt;',
+  '"':'&quot;',
+  "'":'&#39;'
+}[c]));
+
 const rp = n => 'Rp' + Number(n).toLocaleString('id-ID');
 
-let token = localStorage.getItem('token'), me = null, carts = [], selId = null;
+// ---------- FITUR MATA PASSWORD ----------
+
+const passwordInput = $('lp');
+const togglePassword = $('togglePassword');
+const eyeIcon = $('eyeIcon');
+
+togglePassword.addEventListener('click', function() {
+
+  if (passwordInput.type === 'password') {
+
+    // PASSWORD TERLIHAT: IKON MATA TERBUKA
+
+    passwordInput.type = 'text';
+
+    eyeIcon.innerHTML = `
+      <path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7z"/>
+      <circle cx="12" cy="12" r="3"/>
+    `;
+
+    togglePassword.setAttribute(
+      'aria-label',
+      'Sembunyikan password'
+    );
+
+    togglePassword.title = 'Sembunyikan password';
+
+  } else {
+
+    // PASSWORD TERSEMBUNYI: IKON MATA DICORET
+
+    passwordInput.type = 'password';
+
+    eyeIcon.innerHTML = `
+      <path d="M3 3l18 18"/>
+      <path d="M10.6 10.6a2 2 0 0 0 2.8 2.8"/>
+      <path d="M9.9 5.2A10.8 10.8 0 0 1 12 5c6.4 0 10 7 10 7a16 16 0 0 1-3.1 3.8"/>
+      <path d="M6.2 6.2C3.5 8 2 12 2 12s3.6 7 10 7c1 0 1.9-.2 2.7-.5"/>
+    `;
+
+    togglePassword.setAttribute(
+      'aria-label',
+      'Tampilkan password'
+    );
+
+    togglePassword.title = 'Tampilkan password';
+
+  }
+
+});
+
+// ---------- DATA LOGIN ----------
+
+let token = localStorage.getItem('token');
+let me = null;
+let carts = [];
+let selId = null;
+
 const markers = {};
 
-// ---------- Peta ----------
-const map = L.map('map').setView([-6.2088, 106.8456], 13);
-L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-  maxZoom: 19, attribution: '&copy; OpenStreetMap'
-}).addTo(map);
-const ICON = L.icon({ iconUrl: 'gerobak.png', iconSize: [64, 43], iconAnchor: [32, 40] });
+// ---------- PETA ----------
 
-// ---------- API helper ----------
+const map = L.map('map').setView([-6.2088, 106.8456], 13);
+
+L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  maxZoom: 19,
+  attribution: '&copy; OpenStreetMap'
+}).addTo(map);
+
+const ICON = L.icon({
+  iconUrl: 'gerobak.png',
+  iconSize: [64, 43],
+  iconAnchor: [32, 40]
+});
+
+// ---------- API HELPER ----------
+
 async function api(method, url, body) {
+
   const r = await fetch(url, {
+
     method,
-    headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: 'Bearer ' + token } : {}) },
+
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? {
+        Authorization: 'Bearer ' + token
+      } : {})
+    },
+
     body: body ? JSON.stringify(body) : undefined
+
   });
+
   const data = await r.json().catch(() => ({}));
-  if (!r.ok) throw new Error(data.error || 'Terjadi kesalahan');
+
+  if (!r.ok) {
+    throw new Error(data.error || 'Terjadi kesalahan');
+  }
+
   return data;
+
 }
 
-// ---------- Ambil data gerobak (polling tiap 5 detik) ----------
+// ---------- AMBIL DATA GEROBAK ----------
+
 async function refresh() {
-  try { carts = await api('GET', '/api/carts'); } catch (e) { return; }
-  
-  // Customer (halaman utama) hanya melihat gerobak yang online/buka
+
+  try {
+    carts = await api('GET', '/api/carts');
+  } catch (e) {
+    return;
+  }
+
   let displayCarts = carts.filter(c => c.online);
 
   const seen = new Set();
+
   displayCarts.forEach(c => {
+
     seen.add(c.id);
+
     let m = markers[c.id];
+
     if (!m) {
-      m = markers[c.id] = L.marker([c.lat, c.lng], { icon: ICON }).addTo(map)
-        .on('click', () => { selId = c.id; render(true); });
-    } else m.setLatLng([c.lat, c.lng]);
+
+      m = markers[c.id] =
+        L.marker([c.lat, c.lng], { icon: ICON })
+          .addTo(map)
+          .on('click', () => {
+            selId = c.id;
+            render(true);
+          });
+
+    } else {
+
+      m.setLatLng([c.lat, c.lng]);
+
+    }
+
     m.setOpacity(1);
+
   });
+
   Object.keys(markers).forEach(id => {
-    if (!seen.has(id)) { map.removeLayer(markers[id]); delete markers[id]; }
+
+    if (!seen.has(id)) {
+
+      map.removeLayer(markers[id]);
+      delete markers[id];
+
+    }
+
   });
+
   render(false);
+
 }
+
 setInterval(refresh, 5000);
 
-// ---------- Tampilan panel (Khusus Customer melihat menu gerobak) ----------
+// ---------- TAMPILAN PANEL ----------
+
 function render(force) {
+
   const p = $('panel');
-  if (!force && p.contains(document.activeElement) && document.activeElement.tagName === 'INPUT') return;
+
+  if (
+    !force &&
+    p.contains(document.activeElement) &&
+    document.activeElement.tagName === 'INPUT'
+  ) {
+    return;
+  }
+
   let h = '';
+
   const c = carts.find(x => x.id === selId);
-  if (c) h += detail(c);
+
+  if (c) {
+    h += detail(c);
+  }
+
   p.innerHTML = h;
-  $('auth').textContent = me ? 'Keluar (' + me.username + ')' : 'Masuk';
+
+  $('auth').textContent = me
+    ? 'Keluar (' + me.username + ')'
+    : 'Masuk';
+
 }
+
+// ---------- DETAIL GEROBAK ----------
 
 function detail(c) {
-  // Semua menu ditampilkan; yang habis (available = false) ditaruh paling bawah
-  const items = [...(c.menu || [])].sort((a, b) => (a.available === false) - (b.available === false));
+
+  const items = [...(c.menu || [])].sort(
+    (a, b) => (a.available === false) - (b.available === false)
+  );
+
   let h = `<div class="c-head">
-      <button class="c-close" onclick="selId = null; render(true);" title="Tutup">×</button>
-      <div class="c-ava"><img src="gerobak.png" alt=""></div>
-      <div class="c-info">
-        <h3>${esc(c.name)} <span class="tag ${c.online ? '' : 'off'}">${c.online ? 'Buka' : 'Tutup'}</span></h3>
-        <div class="mut">Abang: ${esc(c.abang)} · update ${new Date(c.updated).toLocaleTimeString('id-ID')}</div>
+
+      <button class="c-close"
+        onclick="selId = null; render(true);"
+        title="Tutup">×</button>
+
+      <div class="c-ava">
+        <img src="gerobak.png" alt="">
       </div>
+
+      <div class="c-info">
+
+        <h3>
+          ${esc(c.name)}
+          <span class="tag ${c.online ? '' : 'off'}">
+            ${c.online ? 'Buka' : 'Tutup'}
+          </span>
+        </h3>
+
+        <div class="mut">
+          Abang: ${esc(c.abang)} · update
+          ${new Date(c.updated).toLocaleTimeString('id-ID')}
+        </div>
+
+      </div>
+
     </div>
+
     <div class="sec-title">Menu tersedia</div>`;
-  
+
   if (!items.length) {
-    h += `<div class="empty"><span class="em">☕</span><span class="mut">Belum ada menu yang tersedia di gerobak ini.</span></div>`;
+
+    h += `<div class="empty">
+      <span class="em">☕</span>
+      <span class="mut">
+        Belum ada menu yang tersedia di gerobak ini.
+      </span>
+    </div>`;
+
   } else {
+
     items.forEach(m => {
-      const imgTag = m.image ? `<img class="m-img" src="${m.image}" alt="">` : `<span class="m-img ph">☕</span>`;
+
+      const imgTag = m.image
+        ? `<img class="m-img" src="${m.image}" alt="">`
+        : `<span class="m-img ph">☕</span>`;
+
       const sold = m.available === false;
+
       h += `<div class="row${sold ? ' soldout' : ''}">
+
         <span class="m-left">
+
           ${imgTag}
-          <span class="m-name">${esc(m.name)}${sold ? '<small class="m-sold">habis terjual</small>' : ''}</span>
+
+          <span class="m-name">
+            ${esc(m.name)}
+            ${sold ? '<small class="m-sold">habis terjual</small>' : ''}
+          </span>
+
         </span>
-        <span class="m-price">${rp(m.price)}</span>
+
+        <span class="m-price">
+          ${rp(m.price)}
+        </span>
+
       </div>`;
+
     });
+
   }
+
   return h;
+
 }
 
-// Customer: cari lokasi sendiri
+// ---------- LOKASI PENGGUNA ----------
+
 let meMarker = null;
+
 $('near').onclick = () => {
-  if (!navigator.geolocation) return alert('Browser tidak mendukung GPS');
+
+  if (!navigator.geolocation) {
+    return alert('Browser tidak mendukung GPS');
+  }
+
   navigator.geolocation.getCurrentPosition(pos => {
-    const ll = [pos.coords.latitude, pos.coords.longitude];
-    if (meMarker) map.removeLayer(meMarker);
-    meMarker = L.circleMarker(ll, { radius: 8, color: '#1B1F6B', fillColor: '#FFD400', fillOpacity: .95, weight: 3 }).addTo(map);
+
+    const ll = [
+      pos.coords.latitude,
+      pos.coords.longitude
+    ];
+
+    if (meMarker) {
+      map.removeLayer(meMarker);
+    }
+
+    meMarker = L.circleMarker(ll, {
+
+      radius: 8,
+      color: '#1B1F6B',
+      fillColor: '#FFD400',
+      fillOpacity: .95,
+      weight: 3
+
+    }).addTo(map);
+
     map.setView(ll, 16);
-  }, () => alert('Lokasi tidak bisa diakses. Cek izin lokasi di browser.'));
+
+  }, () => {
+
+    alert('Lokasi tidak bisa diakses. Cek izin lokasi di browser.');
+
+  });
+
 };
 
-// ---------- Login / logout & Redireksi Role ----------
+// ---------- LOGIN DAN LOGOUT ----------
+
 const dlg = $('dlg');
+
 $('auth').onclick = () => {
-  if (me) { 
-    token = null; me = null; localStorage.removeItem('token'); selId = null; 
-    return render(true); 
+
+  if (me) {
+
+    token = null;
+    me = null;
+
+    localStorage.removeItem('token');
+
+    selId = null;
+
+    return render(true);
+
   }
-  $('lerr').textContent = ''; dlg.showModal();
+
+  $('lerr').textContent = '';
+
+  dlg.showModal();
+
 };
+
+// ---------- PROSES LOGIN ----------
 
 $('loginForm').onsubmit = async e => {
-  e.preventDefault();
-  try {
-    const r = await api('POST', '/api/login', { username: $('lu').value, password: $('lp').value });
-    token = r.token; localStorage.setItem('token', token);
-    me = { username: r.username, role: r.role, cartId: r.cartId };
-    dlg.close(); $('lp').value = '';
 
-    // Redireksi otomatis berdasarkan role setelah login berhasil
+  e.preventDefault();
+
+  try {
+
+    const r = await api('POST', '/api/login', {
+
+      username: $('lu').value,
+      password: $('lp').value
+
+    });
+
+    token = r.token;
+
+    localStorage.setItem('token', token);
+
+    me = {
+      username: r.username,
+      role: r.role,
+      cartId: r.cartId
+    };
+
+    dlg.close();
+
+    $('lp').value = '';
+
+    // REDIREKSI BERDASARKAN ROLE
+
     if (me.role === 'admin') {
+
       window.location.href = '/admin.html';
       return;
+
     } else if (me.role === 'abang') {
+
       window.location.href = '/vendor.html';
       return;
+
     }
 
     render(true);
-  } catch (err) { $('lerr').textContent = err.message; }
+
+  } catch (err) {
+
+    $('lerr').textContent = err.message;
+
+  }
+
 };
 
-// ---------- Cek Sesi Saat Halaman Dimuat ----------
+// ---------- CEK SESI SAAT HALAMAN DIMUAT ----------
+
 (async () => {
-  if (token) { 
-    try { 
-      me = await api('GET', '/api/me'); 
+
+  if (token) {
+
+    try {
+
+      me = await api('GET', '/api/me');
+
       if (me) {
-        // Jika sudah login dan membuka index.html, langsung lempar ke halaman masing-masing role
+
         if (me.role === 'admin') {
+
           window.location.href = '/admin.html';
           return;
+
         } else if (me.role === 'abang') {
+
           window.location.href = '/vendor.html';
           return;
+
         }
+
       }
-    } catch (e) { 
-      token = null; 
-      localStorage.removeItem('token'); 
-    } 
+
+    } catch (e) {
+
+      token = null;
+
+      localStorage.removeItem('token');
+
+    }
+
   }
+
   await refresh();
+
   render(true);
+
 })();
+
 </script>
 </body>
 </html>

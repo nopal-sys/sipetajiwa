@@ -25,9 +25,15 @@
     },
     {
       "username": "gaw",
-      "pass": "401aee3e8aacdf0d:350184c55605129bcd367f5e4a166d074ba1cc4148019721ed8c9dbf6c61ab20",
+      "pass": "401aee3e8aacdf0d:350184c55605129bcd367f5e4a166d074ba1cc8019721ed8c9dbf6c61ab20",
       "role": "abang",
       "cartId": "8fc3d38c7e86"
+    },
+    {
+      "username": "jon",
+      "pass": "88789aa3bf790738:b2b35ce9849b11b888337d76815a1332c6bff61c68c8e67d1fa74bb31cd99270",
+      "role": "abang",
+      "cartId": "2551689d6f90"
     }
   ],
   "carts": [
@@ -143,6 +149,23 @@
           "image": "/catalog/imagesmenu/1794071229408-877981058.webp",
           "available": true,
           "stock": 10
+        }
+      ]
+    },
+    {
+      "id": "2551689d6f90",
+      "name": "joni",
+      "abang": "jon",
+      "lat": -6.270853132520245,
+      "lng": 107.03267415627651,
+      "online": true,
+      "updated": 1793888764657,
+      "menu": [
+        {
+          "id": "02b2f188fd2b",
+          "name": "kopi",
+          "price": 4,
+          "available": true
         }
       ]
     }
