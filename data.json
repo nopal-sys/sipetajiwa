@@ -22,6 +22,12 @@
       "pass": "0f3ed634ad17ac7a:ec6f2a14a2b1c305ee5d0f916e047835885e5b451dd8eff5232d0b554f5b2a03",
       "role": "abang",
       "cartId": "07e67039f6d6"
+    },
+    {
+      "username": "gaw",
+      "pass": "401aee3e8aacdf0d:350184c55605129bcd367f5e4a166d074ba1cc4148019721ed8c9dbf6c61ab20",
+      "role": "abang",
+      "cartId": "8fc3d38c7e86"
     }
   ],
   "carts": [
@@ -39,10 +45,10 @@
       "id": "f48a45ac7dcd",
       "name": "3",
       "abang": "paw",
-      "lat": -6.297903531777672,
-      "lng": 106.97154963367727,
+      "lat": -6.297905554145958,
+      "lng": 106.97153125006537,
       "online": true,
-      "updated": 1794070327762,
+      "updated": 1794525983254,
       "menu": [
         {
           "id": "d55dd5481cb5",
@@ -106,6 +112,35 @@
           "name": "es kopi susu",
           "price": 25000,
           "image": "/catalog/imagesmenu/1793907423367-493580271.jpg",
+          "available": true,
+          "stock": 10
+        }
+      ]
+    },
+    {
+      "id": "8fc3d38c7e86",
+      "name": "cabang 4",
+      "abang": "gaw",
+      "lat": -6.257646759547201,
+      "lng": 107.00644686663338,
+      "online": true,
+      "updated": 1794538423213,
+      "menu": [
+        {
+          "id": "0a3706a8ecc1",
+          "productId": "e6df2b5b7a17",
+          "name": "americano ice",
+          "price": 15000,
+          "image": "/catalog/imagesmenu/1793902957310-554987813.jpg",
+          "available": true,
+          "stock": 5
+        },
+        {
+          "id": "e8a7750497a0",
+          "productId": "aff9fc4c32f7",
+          "name": "es kopi vanilla",
+          "price": 8000,
+          "image": "/catalog/imagesmenu/1794071229408-877981058.webp",
           "available": true,
           "stock": 10
         }
